@@ -62,23 +62,23 @@ let MobileWidgetControls = function(
     this.OFFSET_CENTER_REFERENCE = 150;
     this.STICK_REACH_DISTANCE_REFERENCE = 40;
     this.STICK_GRAB_DISTANCE = 150;
-    this.OFFSET_CENTER_DPI = this.OFFSET_CENTER_REFERENCE;
-    this.STICK_REACH_DISTANCE_DPI = this.STICK_REACH_DISTANCE_REFERENCE;
+    this.OFFSET_CENTER = this.OFFSET_CENTER_REFERENCE;
+    this.STICK_REACH_DISTANCE = this.STICK_REACH_DISTANCE_REFERENCE;
 
     this.CANVAS_ID = 'widget-drawing-canvas';
     this.TIME_MS_TO_GET_TO_ORIGINAL_POSITION = 60; // 400ms to relax
     this.buttons = {};
     this.leftStick = {
-        canvasOriginX: this.OFFSET_CENTER_DPI,     modelOriginX: this.OFFSET_CENTER_DPI,
-        canvasOriginY: h - this.OFFSET_CENTER_DPI, modelOriginY: h - this.OFFSET_CENTER_DPI,
+        modelOriginX: this.OFFSET_CENTER,
+        modelOriginY: h - this.OFFSET_CENTER,
         x: 0, y: 0,
         lastHeldX: 0, lastHeldY: 0, held: !1, timeStampReleased: 0,
         needsUpdate: !0,
         sensitivity: 1 // TODO sens
     };
     this.rightStick = {
-        canvasOriginX: w - this.OFFSET_CENTER_DPI, modelOriginX: w - this.OFFSET_CENTER_DPI,
-        canvasOriginY: h - this.OFFSET_CENTER_DPI, modelOriginY: h - this.OFFSET_CENTER_DPI,
+        modelOriginX: w - this.OFFSET_CENTER,
+        modelOriginY: h - this.OFFSET_CENTER,
         x: 0, y: 0,
         lastHeldX: 0, lastHeldY: 0, held: !1, timeStampReleased: 0,
         needsUpdate: !0,
@@ -163,20 +163,18 @@ MobileWidgetControls.prototype.init = function()
     if (dpr !== this.currentDPR) { // Update (because of zoom)
         console.log('[MobileWidgetControls] Zoom triggered: updating DPR.');
         this.currentDPR = dpr;
-        this.OFFSET_CENTER_DPI = this.OFFSET_CENTER_REFERENCE;
-        this.STICK_REACH_DISTANCE_DPI = this.STICK_REACH_DISTANCE_REFERENCE;
+        this.OFFSET_CENTER = this.OFFSET_CENTER_REFERENCE;
+        this.STICK_REACH_DISTANCE = this.STICK_REACH_DISTANCE_REFERENCE;
     }
 
     // No need to resize the model of whatever is gonna be drawn inside the canvas.
     // .
 
     ls.x = ls.y = ls.lastHeldX = ls.lastHeldY = ls.timeStampReleased = 0; ls.held = !1;
-    ls.canvasOriginX = this.OFFSET_CENTER_DPI;      ls.modelOriginX = this.OFFSET_CENTER_DPI;
-    ls.canvasOriginY = dh - this.OFFSET_CENTER_DPI; ls.modelOriginY = dh - this.OFFSET_CENTER_DPI;
+    ls.modelOriginX = this.OFFSET_CENTER; ls.modelOriginY = dh - this.OFFSET_CENTER;
     ls.needsUpdate = !0;
     rs.x = rs.y = rs.lastHeldX = rs.lastHeldY = rs.timeStampReleased = 0; rs.held = !1;
-    rs.canvasOriginX = dw - this.OFFSET_CENTER_DPI; rs.modelOriginX = dw - this.OFFSET_CENTER_DPI;
-    rs.canvasOriginY = dh - this.OFFSET_CENTER_DPI; rs.modelOriginY = dh - this.OFFSET_CENTER_DPI;
+    rs.modelOriginX = dw - this.OFFSET_CENTER; rs.modelOriginY = dh - this.OFFSET_CENTER;
     rs.needsUpdate = !0;
     this.lastTimeStamp = this.getTimeInMilliseconds();
 
@@ -197,9 +195,9 @@ MobileWidgetControls.prototype.updateStickModelFromMove = function(cx, cy, d, st
 {
     let vx = cx - stick.modelOriginX;
     let vy = cy - stick.modelOriginY;
-    if (d > this.STICK_REACH_DISTANCE_DPI) {
-        vx *= this.STICK_REACH_DISTANCE_DPI / d;
-        vy *= this.STICK_REACH_DISTANCE_DPI / d;
+    if (d > this.STICK_REACH_DISTANCE) {
+        vx *= this.STICK_REACH_DISTANCE / d;
+        vy *= this.STICK_REACH_DISTANCE / d;
     }
     stick.x = vx;
     stick.y = vy;
@@ -208,76 +206,64 @@ MobileWidgetControls.prototype.updateStickModelFromMove = function(cx, cy, d, st
     // console.log(`center ${stick.originX},${stick.originY}  --  mouse ${cx},${cy}  --  delta ${vx},${vy}`);
 };
 
-MobileWidgetControls.prototype.updateModelMove = function(cx, cy)
+MobileWidgetControls.prototype.updateModelMove = function(cx, cy, stick)
 {
-    let ls = this.leftStick;
-    let rs = this.rightStick;
-    let dl = this.distanceToStickCenter(cx, cy, ls);
-    let dr = this.distanceToStickCenter(cx, cy, ls);
-    if (dl < this.STICK_GRAB_DISTANCE) {
-        ls.needsUpdate = true;
-        if (!ls.held) return;
-        this.updateStickModelFromMove(cx, cy, dl, ls);
-    } else if (this.leftStick.held) {
-        ls.held = false; ls.needsUpdate = true;
-        this.updateStickModelFromMove(cx, cy, dl, ls);
-        ls.timeStampReleased = performance.now();
-    }
-    if (dr < this.STICK_GRAB_DISTANCE) {
-        rs.needsUpdate = true;
-        if (!rs.held) return;
-        this.updateStickModelFromMove(cx, cy, dr, rs);
-    } else if (this.rightStick.held) {
-        rs.held = false; rs.needsUpdate = true;
-        this.updateStickModelFromMove(cx, cy, dl, rs);
-        rs.timeStampReleased = performance.now();
+    let d = this.distanceToStickCenter(cx, cy, stick);
+    if (d < this.STICK_GRAB_DISTANCE) {
+        stick.needsUpdate = true;
+        if (stick.held) this.updateStickModelFromMove(cx, cy, d, stick);
+    } else if (stick.held) {
+        stick.held = false;
+        stick.needsUpdate = true;
+        this.updateStickModelFromMove(cx, cy, d, stick);
+        stick.timeStampReleased = performance.now();
     }
 };
 
-MobileWidgetControls.prototype.updateModelHold = function(cx, cy, isHolding)
+MobileWidgetControls.prototype.updateModelHold = function(cx, cy, stick, isHolding)
 {
-    let dl = this.distanceToStickCenter(cx, cy, this.leftStick);
-    let dr = this.distanceToStickCenter(cx, cy, this.rightStick);
-    if (dl < this.STICK_GRAB_DISTANCE) {
-        let wasHolding = this.leftStick.held;
-        this.leftStick.held = isHolding;
-        if (wasHolding && !isHolding) this.leftStick.timeStampReleased = performance.now();
-        this.leftStick.needsUpdate = true;
-    }
-    if (dr < this.STICK_GRAB_DISTANCE) {
-        let wasHolding = this.rightStick.held;
-        this.rightStick.held = isHolding;
-        if (wasHolding && !isHolding) this.rightStick.timeStampReleased = performance.now();
-        this.rightStick.needsUpdate = true;
+    let d = this.distanceToStickCenter(cx, cy, stick);
+    if (d < this.STICK_GRAB_DISTANCE) {
+        let wasHolding = stick.held;
+        stick.held = isHolding;
+        if (wasHolding && !isHolding)
+            stick.timeStampReleased = performance.now();
+        stick.needsUpdate = true;
     }
 };
 
 MobileWidgetControls.prototype.updateMove = function(event)
 {
-    let cx = event.clientX; let cy = event.clientY;
     let dpr = this.currentDPR;
-    this.updateModelMove(cx * dpr, cy * dpr);
+    let cx = event.clientX * dpr;
+    let cy = event.clientY * dpr;
+    this.updateModelMove(cx, cy, this.leftStick);
+    this.updateModelMove(cx, cy, this.rightStick);
 };
 MobileWidgetControls.prototype.updateDown = function(event)
 {
-    let cx = event.clientX; let cy = event.clientY;
     let dpr = this.currentDPR;
-    this.updateModelHold(cx * dpr, cy * dpr, true);
-    this.updateModelMove(cx * dpr, cy * dpr);
+    let cx = event.clientX * dpr;
+    let cy = event.clientY * dpr;
+    this.updateModelHold(cx, cy, this.leftStick, true);
+    this.updateModelHold(cx, cy, this.rightStick, true);
+    this.updateModelMove(cx, cy, this.leftStick);
+    this.updateModelMove(cx, cy, this.rightStick);
 };
 MobileWidgetControls.prototype.updateUp = function(event)
 {
     let cx = event.clientX; let cy = event.clientY;
     let dpr = this.currentDPR;
-    this.updateModelHold(cx * dpr, cy * dpr, false);
+    this.updateModelHold(cx * dpr, cy * dpr, this.leftStick, false);
+    this.updateModelHold(cx * dpr, cy * dpr, this.rightStick, false);
 };
 
 MobileWidgetControls.prototype.drawStick = function(ctx, stick)
 {
     ctx.beginPath();
     ctx.globalAlpha = 0.1;
-    let originXLeft = stick.canvasOriginX;// * dpr;
-    let originYLeft = stick.canvasOriginY;// * dpr;
+    let originXLeft = stick.modelOriginX;
+    let originYLeft = stick.modelOriginY;
     ctx.arc(
         originXLeft, originYLeft,
         this.STICK_BASE_DIAMETER, 0, 2 * Math.PI
@@ -291,8 +277,8 @@ MobileWidgetControls.prototype.drawStick = function(ctx, stick)
 
     ctx.beginPath();
     ctx.globalAlpha = 0.1;
-    let stickXLeft = stick.x;// * dpr;
-    let stickYLeft = stick.y;// * dpr;
+    let stickXLeft = stick.x;
+    let stickYLeft = stick.y;
     ctx.arc(
         originXLeft + stickXLeft, originYLeft + stickYLeft,
         this.STICK_HEAD_DIAMETER, 0, 2 * Math.PI
