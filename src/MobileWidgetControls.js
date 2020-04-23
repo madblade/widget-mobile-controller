@@ -61,31 +61,16 @@ let MobileWidgetControls = function(
 
     // Model (non-canvas).
     this.currentDPR = dpr;
-    this.OFFSET_CENTER_REFERENCE = 150;
-    this.STICK_REACH_DISTANCE_REFERENCE = 40;
     this.STICK_GRAB_DISTANCE = 150;
-    this.OFFSET_CENTER = this.OFFSET_CENTER_REFERENCE;
-    this.STICK_REACH_DISTANCE = this.STICK_REACH_DISTANCE_REFERENCE;
+    this.STICK_REACH_DISTANCE = 40;
 
     this.CANVAS_ID = 'widget-drawing-canvas';
     this.TIME_MS_TO_GET_TO_ORIGINAL_POSITION = 60; // 400ms to relax
-    this.buttons = {};
-    this.leftStick = {
-        modelOriginX: this.OFFSET_CENTER,
-        modelOriginY: h - this.OFFSET_CENTER,
-        x: 0, y: 0,
-        lastHeldX: 0, lastHeldY: 0, held: !1, timeStampReleased: 0,
-        needsUpdate: !0,
-        // sensitivity: 1
-    };
-    this.rightStick = {
-        modelOriginX: w - this.OFFSET_CENTER,
-        modelOriginY: h - this.OFFSET_CENTER,
-        x: 0, y: 0,
-        lastHeldX: 0, lastHeldY: 0, held: !1, timeStampReleased: 0,
-        needsUpdate: !0,
-        // sensitivity: 1
-    };
+    this.buttons = [];
+
+    this.OFFSET_CENTER = 150;
+    this.leftStick = {};
+    this.rightStick = {};
     this.lastTimeStamp = 0;
 
     // Graphics.
@@ -165,12 +150,14 @@ MobileWidgetControls.prototype.init = function()
     // .
 
     let controllerType = this.controllerType;
-    this.initSticks(controllerType, dw, dh);
     this.initButtons(controllerType, dw, dh);
+    this.initSticks(controllerType, dw, dh);
 
     // Refresh graphics.
     this.draw();
 };
+
+/* BUTTONS */
 
 // https://www.w3.org/TR/gamepad/
 MobileWidgetControls.PlaystationControllerButtons = [
@@ -213,7 +200,6 @@ MobileWidgetControls.XBoxControllerButtons = [
     {name: 'home'},
 ];
 
-/* BUTTONS */
 MobileWidgetControls.prototype.initButtons = function(controllerType, dw, dh)
 {
     let buttons;
@@ -238,21 +224,33 @@ MobileWidgetControls.prototype.initButtons = function(controllerType, dw, dh)
 
 /* STICKS */
 
+MobileWidgetControls.PlaystationSticks = [
+    {name: 'left', from: 'l', x: 150, y: 150 },
+    {name: 'right', from: 'r', x: 150, y: 150 },
+];
+
+MobileWidgetControls.XBoxSticks = [
+    {name: 'left', from: 'l', x: 150, y: 150 },
+    {name: 'right', from: 'r', x: 150, y: 150 },
+];
+
+MobileWidgetControls.prototype.initStick = function(dw, dh, stick, reference)
+{
+    stick.x = stick.y = stick.lastHeldX = stick.lastHeldY = stick.timeStampReleased = 0;
+    stick.modelOriginX = reference.from === 'l' ? reference.x : dw - reference.x;
+    stick.modelOriginY = dh - reference.y;
+    stick.held = !1;
+    stick.needsUpdate = !0;
+};
+
 MobileWidgetControls.prototype.initSticks = function(controllerType, dw, dh)
 {
-    let ls = this.leftStick;
-    ls.x = ls.y = ls.lastHeldX = ls.lastHeldY = ls.timeStampReleased = 0;
-    ls.modelOriginX = this.OFFSET_CENTER;
-    ls.modelOriginY = dh - this.OFFSET_CENTER;
-    ls.held = !1;
-    ls.needsUpdate = !0;
+    let sticksReference = controllerType === 'playstation' ?
+        MobileWidgetControls.PlaystationSticks :
+        MobileWidgetControls.XBoxControllerButtons;
 
-    let rs = this.rightStick;
-    rs.x = rs.y = rs.lastHeldX = rs.lastHeldY = rs.timeStampReleased = 0;
-    rs.modelOriginX = dw - this.OFFSET_CENTER;
-    rs.modelOriginY = dh - this.OFFSET_CENTER;
-    rs.held = !1;
-    rs.needsUpdate = !0;
+    this.initStick(dw, dh, this.leftStick, sticksReference[0]);
+    this.initStick(dw, dh, this.rightStick, sticksReference[1]);
 
     this.lastTimeStamp = this.getTimeInMilliseconds();
 };
