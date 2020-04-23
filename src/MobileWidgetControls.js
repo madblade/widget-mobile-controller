@@ -55,15 +55,7 @@ let MobileWidgetControls = function(
     this.buttonPressCallback = onButtonPress;
     this.controllerType = controllerType ? controllerType : 'playstation';
 
-    // Model (canvas).
-    this.STICK_HEAD_DIAMETER = 20;
-    this.STICK_BASE_DIAMETER = 50;
-
-    // Model (non-canvas).
     this.currentDPR = dpr;
-    this.STICK_GRAB_DISTANCE = 150;
-    this.STICK_REACH_DISTANCE = 40;
-
     this.CANVAS_ID = 'widget-drawing-canvas';
     this.TIME_MS_TO_GET_TO_ORIGINAL_POSITION = 60; // 400ms to relax
     this.buttons = [];
@@ -225,13 +217,29 @@ MobileWidgetControls.prototype.initButtons = function(controllerType, dw, dh)
 /* STICKS */
 
 MobileWidgetControls.PlaystationSticks = [
-    {name: 'left', from: 'l', x: 150, y: 150 },
-    {name: 'right', from: 'r', x: 150, y: 150 },
+    {
+        name: 'left',
+        from: 'l', x: 150, y: 150,
+        head: 30, base: 60, grab: 150, reach: 45
+    },
+    {
+        name: 'right',
+        from: 'r', x: 150, y: 150,
+        head: 20, base: 50, grab: 150, reach: 40
+    },
 ];
 
 MobileWidgetControls.XBoxSticks = [
-    {name: 'left', from: 'l', x: 150, y: 150 },
-    {name: 'right', from: 'r', x: 150, y: 150 },
+    {
+        name: 'left',
+        from: 'l', x: 150, y: 150,
+        head: 20, base: 50, grab: 150, reach: 40
+    },
+    {
+        name: 'right',
+        from: 'r', x: 150, y: 150,
+        head: 20, base: 50, grab: 150, reach: 40
+    },
 ];
 
 MobileWidgetControls.prototype.initStick = function(dw, dh, stick, reference)
@@ -241,6 +249,11 @@ MobileWidgetControls.prototype.initStick = function(dw, dh, stick, reference)
     stick.modelOriginY = dh - reference.y;
     stick.held = !1;
     stick.needsUpdate = !0;
+
+    stick.STICK_HEAD_DIAMETER = reference.head;
+    stick.STICK_BASE_DIAMETER = reference.base;
+    stick.STICK_GRAB_DISTANCE = reference.grab;
+    stick.STICK_REACH_DISTANCE = reference.reach;
 };
 
 MobileWidgetControls.prototype.initSticks = function(controllerType, dw, dh)
@@ -267,9 +280,9 @@ MobileWidgetControls.prototype.updateStickModelFromMove = function(cx, cy, d, st
 {
     let vx = cx - stick.modelOriginX;
     let vy = cy - stick.modelOriginY;
-    if (d > this.STICK_REACH_DISTANCE) {
-        vx *= this.STICK_REACH_DISTANCE / d;
-        vy *= this.STICK_REACH_DISTANCE / d;
+    if (d > stick.STICK_REACH_DISTANCE) {
+        vx *= stick.STICK_REACH_DISTANCE / d;
+        vy *= stick.STICK_REACH_DISTANCE / d;
     }
     stick.x = vx;
     stick.y = vy;
@@ -281,7 +294,7 @@ MobileWidgetControls.prototype.updateStickModelFromMove = function(cx, cy, d, st
 MobileWidgetControls.prototype.updateModelMove = function(cx, cy, stick)
 {
     let d = this.distanceToStickCenter(cx, cy, stick);
-    if (d < this.STICK_GRAB_DISTANCE) {
+    if (d < stick.STICK_GRAB_DISTANCE) {
         stick.needsUpdate = true;
         if (stick.held) this.updateStickModelFromMove(cx, cy, d, stick);
     } else if (stick.held) {
@@ -295,7 +308,7 @@ MobileWidgetControls.prototype.updateModelMove = function(cx, cy, stick)
 MobileWidgetControls.prototype.updateModelHold = function(cx, cy, stick, isHolding)
 {
     let d = this.distanceToStickCenter(cx, cy, stick);
-    if (d < this.STICK_GRAB_DISTANCE) {
+    if (d < stick.STICK_GRAB_DISTANCE) {
         let wasHolding = stick.held;
         stick.held = isHolding;
         if (wasHolding && !isHolding)
@@ -340,7 +353,7 @@ MobileWidgetControls.prototype.drawStick = function(ctx, stick)
     let originYLeft = stick.modelOriginY;
     ctx.arc(
         originXLeft, originYLeft,
-        this.STICK_BASE_DIAMETER, 0, 2 * Math.PI
+        stick.STICK_BASE_DIAMETER, 0, 2 * Math.PI
     );
     ctx.fillStyle = 'black';
     ctx.fill();
@@ -355,7 +368,7 @@ MobileWidgetControls.prototype.drawStick = function(ctx, stick)
     let stickYLeft = stick.y;
     ctx.arc(
         originXLeft + stickXLeft, originYLeft + stickYLeft,
-        this.STICK_HEAD_DIAMETER, 0, 2 * Math.PI
+        stick.STICK_HEAD_DIAMETER, 0, 2 * Math.PI
     );
     ctx.fillStyle = 'black';
     ctx.fill();
