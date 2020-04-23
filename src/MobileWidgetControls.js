@@ -214,6 +214,36 @@ MobileWidgetControls.prototype.initButtons = function(controllerType, dw, dh)
     }
 };
 
+MobileWidgetControls.prototype.drawButton = function(ctx, button)
+{
+    ctx.beginPath();
+    ctx.globalAlpha = 0.1;
+    let originXLeft = button.modelOriginX;
+    let originYLeft = button.modelOriginY;
+    ctx.arc(
+        originXLeft, originYLeft,
+        button.BUTTON_DIAMETER, 0, 2 * Math.PI
+    );
+    ctx.fillStyle = 'black';
+    ctx.fill();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'white';
+    ctx.stroke();
+    ctx.closePath();
+
+    ctx.beginPath();
+    ctx.font = `${button.BUTTON_LABEL_SIZE}px Arial`;
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.globalAlpha = 0.1;
+    ctx.fillText(button.BUTTON_LABEL, originXLeft, originYLeft);
+    // ctx.fill();
+    // ctx.lineWidth = 2;
+    // ctx.strokeStyle = 'white';
+    // ctx.stroke();
+};
+
 /* STICKS */
 
 MobileWidgetControls.PlaystationSticks = [
@@ -385,6 +415,24 @@ MobileWidgetControls.prototype.draw = function()
 
     this.drawStick(ctx, this.leftStick);
     this.drawStick(ctx, this.rightStick);
+    this.drawButton(ctx,
+        {
+            modelOriginX: 0.5 * (this.leftStick.modelOriginX + this.rightStick.modelOriginX),
+            modelOriginY: 0.5 * (this.leftStick.modelOriginY + this.rightStick.modelOriginY),
+            BUTTON_DIAMETER: 50, BUTTON_LABEL:
+                String.fromCharCode(9711) +
+                String.fromCharCode(9723) +
+                String.fromCharCode(9651) +
+                String.fromCharCode(10761),
+            // String.fromCharCode(215) +
+            // String.fromCharCode(8855) +
+            // String.fromCharCode(10005) +
+            // String.fromCharCode(10006) +
+            // String.fromCharCode(9675) +
+            // String.fromCharCode(9633)
+            BUTTON_LABEL_SIZE: 30
+        }
+    );
 };
 
 MobileWidgetControls.prototype.interpolateStick = function(stick, newTime)
