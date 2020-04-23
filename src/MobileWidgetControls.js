@@ -34,7 +34,8 @@ let MobileWidgetControls = function(
     element,
     onLeftStickMove,
     onRightStickMove,
-    onButtonPress)
+    onButtonPress,
+    controllerType)
 {
     if (!(element instanceof HTMLElement))
         throw Error('[MobileWidgetControls] Expected element to be an HTMLElement.');
@@ -52,6 +53,7 @@ let MobileWidgetControls = function(
     this.leftStickMoveCallback = onLeftStickMove;
     this.rightStickMoveCallback = onRightStickMove;
     this.buttonPressCallback = onButtonPress;
+    this.controllerType = controllerType ? controllerType : 'playstation';
 
     // Model (canvas).
     this.STICK_HEAD_DIAMETER = 20;
@@ -74,7 +76,7 @@ let MobileWidgetControls = function(
         x: 0, y: 0,
         lastHeldX: 0, lastHeldY: 0, held: !1, timeStampReleased: 0,
         needsUpdate: !0,
-        sensitivity: 1 // TODO sens
+        // sensitivity: 1
     };
     this.rightStick = {
         modelOriginX: w - this.OFFSET_CENTER,
@@ -82,12 +84,7 @@ let MobileWidgetControls = function(
         x: 0, y: 0,
         lastHeldX: 0, lastHeldY: 0, held: !1, timeStampReleased: 0,
         needsUpdate: !0,
-        sensitivity: 1 // TODO sens
-    };
-    // TODO pad
-    this.rightPad = {
-        x: 0,
-        y: 0,
+        // sensitivity: 1
     };
     this.lastTimeStamp = 0;
 
@@ -147,8 +144,6 @@ MobileWidgetControls.prototype.init = function()
 {
     let h = window.innerHeight;
     let w = window.innerWidth;
-    let rs = this.rightStick;
-    let ls = this.leftStick;
 
     // Resize canvas style.
     this.canvas.style.width = `${w}px`;
@@ -156,32 +151,111 @@ MobileWidgetControls.prototype.init = function()
 
     // Resize model for css.
     let dpr = window.devicePixelRatio;
+    if (dpr !== this.currentDPR) { // Update (because of zoom)
+        console.log('[MobileWidgetControls] Zoom triggered: updating DPR.');
+        this.currentDPR = dpr;
+    }
     let dw = dpr * w;
     let dh = dpr * h;
     this.canvas.width = dw;
     this.canvas.height = dh;
-    if (dpr !== this.currentDPR) { // Update (because of zoom)
-        console.log('[MobileWidgetControls] Zoom triggered: updating DPR.');
-        this.currentDPR = dpr;
-        this.OFFSET_CENTER = this.OFFSET_CENTER_REFERENCE;
-        this.STICK_REACH_DISTANCE = this.STICK_REACH_DISTANCE_REFERENCE;
-    }
 
     // No need to resize the model of whatever is gonna be drawn inside the canvas.
+    // Event X and Y are going to be rescaled.
     // .
 
-    ls.x = ls.y = ls.lastHeldX = ls.lastHeldY = ls.timeStampReleased = 0; ls.held = !1;
-    ls.modelOriginX = this.OFFSET_CENTER; ls.modelOriginY = dh - this.OFFSET_CENTER;
-    ls.needsUpdate = !0;
-    rs.x = rs.y = rs.lastHeldX = rs.lastHeldY = rs.timeStampReleased = 0; rs.held = !1;
-    rs.modelOriginX = dw - this.OFFSET_CENTER; rs.modelOriginY = dh - this.OFFSET_CENTER;
-    rs.needsUpdate = !0;
-    this.lastTimeStamp = this.getTimeInMilliseconds();
+    let controllerType = this.controllerType;
+    this.initSticks(controllerType, dw, dh);
+    this.initButtons(controllerType, dw, dh);
 
     // Refresh graphics.
     this.draw();
 };
 
+// https://www.w3.org/TR/gamepad/
+MobileWidgetControls.PlaystationControllerButtons = [
+    {name: 'cross' },
+    {name: 'circle' },
+    {name: 'square' },
+    {name: 'triangle' },
+    {name: 'L1' },
+    {name: 'R1' },
+    {name: 'L2' },
+    {name: 'R2' },
+    {name: 'back' },        // select
+    {name: 'forward' },     // start
+    {name: 'stickLB' },
+    {name: 'stickRB' },
+    {name: 'dpadUp' },
+    {name: 'dpadDown' },
+    {name: 'dpadLeft' },
+    {name: 'dpadRight' },
+    {name: 'home' },
+];
+
+MobileWidgetControls.XBoxControllerButtons = [
+    {name: 'A'},
+    {name: 'B' },
+    {name: 'X' },
+    {name: 'Y' },
+    {name: 'LB' },
+    {name: 'RB' },
+    {name: 'LT' },
+    {name: 'RT' },
+    {name: 'back' },        // select
+    {name: 'forward' },     // start
+    {name: 'stickLB' },
+    {name: 'stickRB' },
+    {name: 'dpadUp' },
+    {name: 'dpadDown' },
+    {name: 'dpadLeft' },
+    {name: 'dpadRight' },
+    {name: 'home'},
+];
+
+/* BUTTONS */
+MobileWidgetControls.prototype.initButtons = function(controllerType, dw, dh)
+{
+    let buttons;
+    switch (controllerType) {
+        case 'playstation':
+            buttons = MobileWidgetControls.PlaystationControllerButtons;
+            break;
+        case 'xbox':
+            buttons = MobileWidgetControls.XBoxControllerButtons;
+            break;
+        default: return;
+    }
+
+    for (let bid in buttons) {
+        if (!buttons.hasOwnProperty(bid)) continue;
+        let button = buttons[bid];
+        // button.modelOriginX = button.offsetX;
+        // button.modelOriginY = dh - button.offsetY;
+        // TODO from left and from right
+    }
+};
+
+/* STICKS */
+
+MobileWidgetControls.prototype.initSticks = function(controllerType, dw, dh)
+{
+    let ls = this.leftStick;
+    ls.x = ls.y = ls.lastHeldX = ls.lastHeldY = ls.timeStampReleased = 0;
+    ls.modelOriginX = this.OFFSET_CENTER;
+    ls.modelOriginY = dh - this.OFFSET_CENTER;
+    ls.held = !1;
+    ls.needsUpdate = !0;
+
+    let rs = this.rightStick;
+    rs.x = rs.y = rs.lastHeldX = rs.lastHeldY = rs.timeStampReleased = 0;
+    rs.modelOriginX = dw - this.OFFSET_CENTER;
+    rs.modelOriginY = dh - this.OFFSET_CENTER;
+    rs.held = !1;
+    rs.needsUpdate = !0;
+
+    this.lastTimeStamp = this.getTimeInMilliseconds();
+};
 
 MobileWidgetControls.prototype.distanceToStickCenter = function(cx, cy, stick)
 {
@@ -216,7 +290,7 @@ MobileWidgetControls.prototype.updateModelMove = function(cx, cy, stick)
         stick.held = false;
         stick.needsUpdate = true;
         this.updateStickModelFromMove(cx, cy, d, stick);
-        stick.timeStampReleased = performance.now();
+        stick.timeStampReleased = this.getTimeInMilliseconds();
     }
 };
 
@@ -227,7 +301,7 @@ MobileWidgetControls.prototype.updateModelHold = function(cx, cy, stick, isHoldi
         let wasHolding = stick.held;
         stick.held = isHolding;
         if (wasHolding && !isHolding)
-            stick.timeStampReleased = performance.now();
+            stick.timeStampReleased = this.getTimeInMilliseconds();
         stick.needsUpdate = true;
     }
 };
@@ -240,6 +314,7 @@ MobileWidgetControls.prototype.updateMove = function(event)
     this.updateModelMove(cx, cy, this.leftStick);
     this.updateModelMove(cx, cy, this.rightStick);
 };
+
 MobileWidgetControls.prototype.updateDown = function(event)
 {
     let dpr = this.currentDPR;
@@ -250,6 +325,7 @@ MobileWidgetControls.prototype.updateDown = function(event)
     this.updateModelMove(cx, cy, this.leftStick);
     this.updateModelMove(cx, cy, this.rightStick);
 };
+
 MobileWidgetControls.prototype.updateUp = function(event)
 {
     let cx = event.clientX; let cy = event.clientY;
