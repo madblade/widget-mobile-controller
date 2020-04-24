@@ -179,19 +179,60 @@ MobileWidgetControls.PlaystationControllerButtons = [
         label: String.fromCharCode(9651),
         labelOffset: 0
     },
-    {name: 'L1' },
-    {name: 'R1' },
-    {name: 'L2' },
-    {name: 'R2' },
+    {name: 'L1',
+        from: 'l', x: 150, y: 450,
+        labelSize: 30, diameter: 30,
+        label: 'L1', labelOffset: 0
+    },
+    {name: 'R1',
+        from: 'r', x: 150, y: 450,
+        labelSize: 30, diameter: 30,
+        label: 'R1', labelOffset: 0
+    },
+    {name: 'L2',
+        from: 'l', x: 200, y: 450,
+        labelSize: 30, diameter: 30,
+        label: 'L2', labelOffset: 0
+    },
+    {name: 'R2',
+        from: 'r', x: 200, y: 450,
+        labelSize: 30, diameter: 30,
+        label: 'R2', labelOffset: 0
+    },
     {name: 'back' },        // select
     {name: 'forward' },     // start
-    {name: 'stickLB' },
-    {name: 'stickRB' },
-    {name: 'dpadUp' },
-    {name: 'dpadDown' },
-    {name: 'dpadLeft' },
-    {name: 'dpadRight' },
-    {name: 'home' },
+    {name: 'stickLB' },     // click on stick
+    {name: 'stickRB' },     // click on stick
+    {name: 'dpadUp',
+        from: 'l', x: 150, y: 400,
+        label: String.fromCharCode(8593),
+        labelSize: 30, diameter: 30,
+        labelOffset: 2
+    },
+    {name: 'dpadDown',
+        from: 'l', x: 150, y: 300,
+        label: String.fromCharCode(8595),
+        labelSize: 30, diameter: 30,
+        labelOffset: 2
+    },
+    {name: 'dpadLeft',
+        from: 'l', x: 100, y: 350,
+        label: String.fromCharCode(8592),
+        labelSize: 30, diameter: 30,
+        labelOffset: 2
+    },
+    {name: 'dpadRight',
+        from: 'l', x: 200, y: 350,
+        label: String.fromCharCode(8594),
+        labelSize: 30, diameter: 30,
+        labelOffset: 2
+    },
+    {name: 'home',
+        from: 'l', x: 300, y: 150,
+        label: 'PS',
+        labelSize: 30, diameter: 30,
+        labelOffset: 2
+    },
 ];
 
 // https://patents.google.com/patent/US8641525B2/en
