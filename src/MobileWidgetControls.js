@@ -14,7 +14,8 @@ let MobileWidgetCameraControls = function(
         console.log(window.devicePixelRatio);
     };
     this.widgetControls = new MobileWidgetControls(
-        element, onLeftStickMove, onRightStickMove, onButtonPressed
+        element, onLeftStickMove, onRightStickMove, onButtonPressed,
+        'playstation'
     );
 };
 
@@ -54,7 +55,7 @@ let MobileWidgetControls = function(
     this.leftStickMoveCallback = onLeftStickMove;
     this.rightStickMoveCallback = onRightStickMove;
     this.buttonPressCallback = onButtonPress;
-    this.controllerType = controllerType ? controllerType : 'playstation';
+    this.controllerType = controllerType ? controllerType : 'default';
 
     // Device pixel ratio trick to correctly initialize the model on mobile
     // (where zooming is disabled)
@@ -163,46 +164,46 @@ MobileWidgetControls.prototype.init = function()
 // https://patents.google.com/patent/US20130215024A1/en
 MobileWidgetControls.PlaystationControllerButtons = [
     {name: 'cross',
-        from: 'r', x: 150, y: 300,
+        from: 'r', x: 85, y: 75,
         label: String.fromCharCode(10761),
         labelSize: 30, diameter: 30,
         labelOffset: 2
     },
     {name: 'circle',
-        from: 'r', x: 100, y: 350,
+        from: 'r', x: 40, y: 120,
         labelSize: 23, diameter: 30,
         label: String.fromCharCode(9711),
         labelOffset: 2
     },
     {name: 'square',
-        from: 'r', x: 200, y: 350,
+        from: 'r', x: 130, y: 120,
         labelSize: 36, diameter: 30,
         label: String.fromCharCode(9723),
         labelOffset: 2
     },
     {name: 'triangle',
-        from: 'r', x: 150, y: 400,
+        from: 'r', x: 85, y: 165,
         labelSize: 35, diameter: 30,
         label: String.fromCharCode(9651),
         labelOffset: 0
     },
     {name: 'L1',
-        from: 'l', x: 150, y: 450,
+        from: 'l', x: 110, y: 260,
         labelSize: 30, diameter: 30,
         label: 'L1', labelOffset: 3
     },
     {name: 'R1',
-        from: 'r', x: 150, y: 450,
+        from: 'r', x: 110, y: 260,
         labelSize: 30, diameter: 30,
         label: 'R1', labelOffset: 3
     },
     {name: 'L2',
-        from: 'l', x: 200, y: 450,
+        from: 'l', x: 50, y: 280,
         labelSize: 30, diameter: 30,
         label: 'L2', labelOffset: 3
     },
     {name: 'R2',
-        from: 'r', x: 200, y: 450,
+        from: 'r', x: 50, y: 280,
         labelSize: 30, diameter: 30,
         label: 'R2', labelOffset: 3
     },
@@ -211,34 +212,34 @@ MobileWidgetControls.PlaystationControllerButtons = [
     {name: 'stickLB' },     // click on stick
     {name: 'stickRB' },     // click on stick
     {name: 'dpadUp',
-        from: 'l', x: 150, y: 400,
+        from: 'l', x: 65, y: 205,
         label: String.fromCharCode(8593),
-        labelSize: 30, diameter: 30,
+        labelSize: 20, diameter: 23,
         labelOffset: 0
     },
     {name: 'dpadDown',
-        from: 'l', x: 150, y: 300,
+        from: 'l', x: 65, y: 135,
         label: String.fromCharCode(8595),
-        labelSize: 30, diameter: 30,
+        labelSize: 20, diameter: 23,
         labelOffset: 0
     },
     {name: 'dpadLeft',
-        from: 'l', x: 100, y: 350,
+        from: 'l', x: 30, y: 170,
         label: String.fromCharCode(8592),
-        labelSize: 30, diameter: 30,
+        labelSize: 20, diameter: 23,
         labelOffset: 0
     },
     {name: 'dpadRight',
-        from: 'l', x: 200, y: 350,
+        from: 'l', x: 100, y: 170,
         label: String.fromCharCode(8594),
-        labelSize: 30, diameter: 30,
+        labelSize: 20, diameter: 23,
         labelOffset: 0
     },
     {name: 'home',
-        from: 'l', x: 300, y: 150,
-        label: 'PS',
-        labelSize: 30, diameter: 30,
-        labelOffset: 2
+        // from: 'l', x: 300, y: 150,
+        // label: 'PS',
+        // labelSize: 10, diameter: 20,
+        // labelOffset: 2
     },
 ];
 
@@ -273,7 +274,9 @@ MobileWidgetControls.prototype.initButtons = function(controllerType, dw, dh)
         case 'xbox':
             buttons = MobileWidgetControls.XBoxControllerButtons;
             break;
-        default: return;
+        default:
+            // No buttons.
+            return;
     }
 
     let dpr = this.initialDPR;
@@ -350,6 +353,7 @@ MobileWidgetControls.prototype.updateButtonModelMove = function(cx, cy, buttons)
         if (d < b.BUTTON_DIAMETER) continue;
 
         // Button released.
+        // TODO do that for all fingers
         if (b.held) {
             hasReleasedButton = true;
             // console.log(`Button ${b.id} released.`);
@@ -400,17 +404,38 @@ MobileWidgetControls.prototype.drawButton = function(ctx, button)
 
 /* STICKS */
 
-MobileWidgetControls.PlaystationSticks = [
+MobileWidgetControls.DefaultSticks = [
     {
         name: 'left',
-        from: 'l', x: 150, y: 150,
-        head: 30, base: 60, grab: 150, reach: 45,
+        from: 'l', x: 80, y: 80,
+        head: 25, base: 70, grab: 150, reach: 55,
+        label: String.fromCharCode(10021), // multi-directional cross
+        labelSize: 30,
+        labelOffset: 2, // offset i.e. for caps letters
         theme: 'gradient'
     },
     {
         name: 'right',
-        from: 'r', x: 150, y: 150,
-        head: 20, base: 50, grab: 150, reach: 40,
+        from: 'r', x: 80, y: 80,
+        head: 25, base: 70, grab: 150, reach: 55,
+        label: String.fromCharCode(10021), // multi-directional cross
+        labelSize: 30,
+        labelOffset: 2, // offset i.e. for caps letters
+        theme: 'gradient'
+    },
+];
+
+MobileWidgetControls.PlaystationSticks = [
+    {
+        name: 'left',
+        from: 'l', x: 155, y: 80,
+        head: 25, base: 70, grab: 150, reach: 55,
+        theme: 'gradient'
+    },
+    {
+        name: 'right',
+        from: 'r', x: 240, y: 100,
+        head: 25, base: 70, grab: 150, reach: 55,
         // label: String.fromCharCode(10021), // multi-directional cross
         // labelSize: 30,
         // labelOffset: 2, // offset i.e. for caps letters
@@ -457,9 +482,18 @@ MobileWidgetControls.prototype.initStick = function(dw, dh, stick, reference)
 
 MobileWidgetControls.prototype.initSticks = function(controllerType, dw, dh)
 {
-    let sticksReference = controllerType === 'playstation' ?
-        MobileWidgetControls.PlaystationSticks :
-        MobileWidgetControls.XBoxControllerButtons;
+    let sticksReference;
+    switch (controllerType) {
+        case 'playstation':
+            sticksReference = MobileWidgetControls.PlaystationSticks;
+            break;
+        case 'xbox':
+            sticksReference = MobileWidgetControls.XBoxSticks;
+            break;
+        default:
+            sticksReference = MobileWidgetControls.DefaultSticks;
+            break;
+    }
 
     this.initStick(dw, dh, this.leftStick, sticksReference[0]);
     this.initStick(dw, dh, this.rightStick, sticksReference[1]);
@@ -705,11 +739,11 @@ MobileWidgetControls.prototype.clamp = function(t, low, high)
     return Math.min(high, Math.max(low, t));
 };
 
-MobileWidgetControls.prototype.smoothstep = function(end1, end2, t)
-{
-    let x = this.clamp((t - end1) / (end2 - end1), 0.0, 1.0);
-    return x * x * (3 - 2 * x);
-};
+// MobileWidgetControls.prototype.smoothstep = function(end1, end2, t)
+// {
+//     let x = this.clamp((t - end1) / (end2 - end1), 0.0, 1.0);
+//     return x * x * (3 - 2 * x);
+// };
 
 MobileWidgetControls.prototype.smootherstep = function(end1, end2, t)
 {

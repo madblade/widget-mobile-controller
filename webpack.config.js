@@ -49,8 +49,8 @@ module.exports = function(env) {
         // devtool: 'inline-source-map',
 
         devServer: {
-            contentBase: 'http://localhost:9000/dist',
-            port: 9000,
+            contentBase: 'http://localhost:8080/dist',
+            port: 8080,
             hot: true,
             disableHostCheck: true
         },
