@@ -58,7 +58,6 @@ let MobileWidgetControls = function(
     this.currentDPR = dpr;
     this.CANVAS_ID = 'widget-drawing-canvas';
     this.TIME_MS_TO_GET_TO_ORIGINAL_POSITION = 60; // 400ms to relax
-    this.lastTimeStamp = 0;
 
     // Model
     this.leftStick = {};
@@ -107,8 +106,6 @@ let MobileWidgetControls = function(
     window.addEventListener('touchend', touchListener('end'));
     window.addEventListener('touchcancel', touchListener('cancel'));
     // TODO see touchcancel
-
-    // TODO custom callbacks
 
     // Util.
     this._resizeRequest = null;
@@ -361,6 +358,7 @@ MobileWidgetControls.prototype.updateButtonModelMove = function(cx, cy, buttons)
 
 MobileWidgetControls.prototype.drawButton = function(ctx, button)
 {
+    // Background
     ctx.beginPath();
     ctx.globalAlpha = 0.3;
     let originXLeft = button.modelOriginX;
@@ -369,13 +367,14 @@ MobileWidgetControls.prototype.drawButton = function(ctx, button)
         originXLeft, originYLeft,
         button.BUTTON_DIAMETER, 0, 2 * Math.PI
     );
-    ctx.fillStyle = 'black';
+    ctx.fillStyle = button.held ? '#222222' : 'black';
     ctx.fill();
     ctx.lineWidth = 1;
     ctx.strokeStyle = 'white';
     ctx.stroke();
     ctx.closePath();
 
+    // Label
     ctx.beginPath();
     ctx.font = `${button.BUTTON_LABEL_SIZE}px Arial`;
     ctx.fillStyle = 'white';
@@ -456,8 +455,6 @@ MobileWidgetControls.prototype.initSticks = function(controllerType, dw, dh)
 
     this.initStick(dw, dh, this.leftStick, sticksReference[0]);
     this.initStick(dw, dh, this.rightStick, sticksReference[1]);
-
-    this.lastTimeStamp = this.getTimeInMilliseconds();
 };
 
 MobileWidgetControls.prototype.notifyStickMoved = function(vx, vy, stick)
@@ -661,7 +658,6 @@ MobileWidgetControls.prototype.interpolateStick = function(stick, newTime)
 MobileWidgetControls.prototype.animate = function()
 {
     let newTime = this.getTimeInMilliseconds();
-    // let deltaTime = this.lastTimeStamp - newTime;
 
     let leftStick = this.leftStick;
     if (!leftStick.held && leftStick.needsUpdate)
@@ -670,7 +666,6 @@ MobileWidgetControls.prototype.animate = function()
     if (!rightStick.held && rightStick.needsUpdate)
         this.interpolateStick(rightStick, newTime);
 
-    this.lastTimeStamp = newTime;
     this.draw();
 };
 
