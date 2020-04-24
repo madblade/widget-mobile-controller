@@ -86,9 +86,9 @@ let MobileWidgetControls = function(
     }
 
     // Listeners.
-    this.element.addEventListener('mousemove', e => this.updateMove(e));
-    this.element.addEventListener('mousedown', e => this.updateDown(e));
-    this.element.addEventListener('mouseup', e => this.updateUp(e));
+    // this.element.addEventListener('mousemove', e => this.updateMove(e));
+    // this.element.addEventListener('mousedown', e => this.updateDown(e));
+    // this.element.addEventListener('mouseup', e => this.updateUp(e));
     window.addEventListener('resize', () => this.resize());
 
     // TODO touch events
@@ -424,20 +424,32 @@ MobileWidgetControls.prototype.updateButtonModelMove = function(cx, cy, buttons)
     {
         // Get all buttons that are not touched.
         let b = buttons[i];
+
+        if (!b.held) continue; // b wasn’t held.
+
         let d = this.distanceToObjectCenter(cx, cy, b);
-        if (d < b.BUTTON_DIAMETER) continue;
+        if (d < b.BUTTON_DIAMETER) continue; // b wasn’t under finger.
 
-        // Button released.
-        // TODO do that for all fingers
-        let f = this.fingers;
-        if (b.held) {
-            hasReleasedButton = true;
-            // console.log(`Button ${b.id} released.`);
-            b.held = false;
-
-            // Propagate.
-            this.notifyButtonChanged(b, false);
+        // Test b against every finger.
+        let isUnderAnotherFinger = false;
+        let fs = this.fingers;
+        let dpr = this.currentDPR;
+        for (let j = 0; j < fs.length; ++j) {
+            let f = fs[j];
+            let d2 = this.distanceToObjectCenter(dpr * f.x, dpr * f.y, b);
+            if (d2 < b.BUTTON_DIAMETER) {
+                isUnderAnotherFinger = true;
+                break;
+            }
         }
+        if (isUnderAnotherFinger) continue; // b is under finger, but another one.
+
+        hasReleasedButton = true;
+        // console.log(`Button ${b.id} released.`);
+        b.held = false;
+
+        // Propagate.
+        this.notifyButtonChanged(b, false);
     }
 
     return hasReleasedButton;
