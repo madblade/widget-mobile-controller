@@ -3,15 +3,22 @@ let MobileWidgetCameraControls = function(
     element, camera)
 {
     this.camera = camera;
-    let onLeftStickMove = function(x, y) {
+    this.leftX = 0;
+    this.leftY = 0;
+    this.rightX = 0;
+    this.rightY = 0;
+    let onLeftStickMove = (x, y) => {
+        this.leftX = x;
+        this.leftY = y;
         console.log(`left ${x},${y}`);
     };
-    let onRightStickMove = function(x, y) {
+    let onRightStickMove = (x, y) => {
+        this.rightX = x;
+        this.rightY = y;
         console.log(`right ${x},${y}`);
     };
-    let onButtonPressed = function(which, isHeld) {
+    let onButtonPressed = (which, isHeld) => {
         console.log(`button ${which} ${isHeld ? 'pressed' : 'released'}.`);
-        console.log(window.devicePixelRatio);
     };
     this.widgetControls = new MobileWidgetControls(
         element, onLeftStickMove, onRightStickMove, onButtonPressed,
@@ -21,6 +28,14 @@ let MobileWidgetCameraControls = function(
 
 MobileWidgetCameraControls.prototype.animate = function()
 {
+    this.camera.position.x += this.leftX / 100;
+    this.camera.position.z += this.leftY / 100;
+
+    this.camera.rotation.y -= this.rightX / 100;
+    this.camera.rotation.x -= this.rightY / 100;
+
+    // this.camera.updateMatrix();
+
     this.widgetControls.animate();
 };
 
@@ -91,26 +106,28 @@ let MobileWidgetControls = function(
     // this.element.addEventListener('mouseup', e => this.updateUp(e));
     window.addEventListener('resize', () => this.resize());
 
-    // TODO touch events
-    let touchListener = k => e => {
-        let touches = e.touches;
-        console.log(`${k}`);
-        console.log(e);
-        console.log(touches);
+    let touchListener = k => e =>
+    {
+        // console.log(`${k}`);
+        // console.log(e);
+        // console.log(touches);
         this.fingers = [];
+        if (k === 'cancel') {
+            console.error('[MobileWidgetControls] Too many fingers or unsupported action.');
+            // this.init();
+            return;
+        }
+
+        // Update finger model.
+        let touches = e.touches;
         for (let i = 0; i < touches.length; ++i) {
             let touch = touches[i];
             let x = touch.clientX;
             let y = touch.clientY;
             this.fingers.push({x, y});
-            console.log(`${x},${y},${k}`);
-            // let el = document.elementFromPoint(x, y);
-            // if (!el) continue;
-            // switch (el.id) {
-            //     default: break;
-            // }
         }
 
+        // Update controller model.
         let changedTouches = e.changedTouches;
         for (let i = 0; i < changedTouches.length; ++i) {
             let touch = changedTouches[i];
@@ -124,7 +141,6 @@ let MobileWidgetControls = function(
     window.addEventListener('touchmove', touchListener('move'));
     window.addEventListener('touchend', touchListener('end'));
     window.addEventListener('touchcancel', touchListener('cancel'));
-    // TODO see touchcancel
 
     // Util.
     this._resizeRequest = null;
@@ -637,11 +653,27 @@ MobileWidgetControls.prototype.updateStickModelMove = function(cx, cy, stick)
     if (d < stick.STICK_GRAB_DISTANCE) { // stick grab
         stick.needsUpdate = true;
         if (stick.held) this.updateStickModelFromMove(cx, cy, d, stick);
-    } else if (stick.held) { // stick release
-        stick.held = false;
-        stick.needsUpdate = true;
-        this.updateStickModelFromMove(cx, cy, d, stick);
-        stick.timeStampReleased = this.getTimeInMilliseconds();
+    } else if (stick.held) {
+        // test against every other finger
+        let stickIsHeldByAnotherFinger = false;
+        let fs = this.fingers;
+        let dpr = this.currentDPR;
+        for (let i = 0; i < fs.length; ++i) {
+            let f = fs[i];
+            let d2 = this.distanceToObjectCenter(dpr * f.x, dpr * f.y, stick);
+            if (d2 < stick.STICK_GRAB_DISTANCE) {
+                stickIsHeldByAnotherFinger = true;
+                break;
+            }
+        }
+
+        if (!stickIsHeldByAnotherFinger) {
+            // stick release
+            stick.held = false;
+            stick.needsUpdate = true;
+            this.updateStickModelFromMove(cx, cy, d, stick);
+            stick.timeStampReleased = this.getTimeInMilliseconds();
+        }
     }
 };
 

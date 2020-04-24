@@ -53,6 +53,7 @@ function init()
     scene.add(camera);
 
     light = new HemisphereLight(0xffffff, 0xffffff, 1);
+    light.position.set(0, 5, 0);
     scene.add(light);
 
     let g = new TorusKnotBufferGeometry();
