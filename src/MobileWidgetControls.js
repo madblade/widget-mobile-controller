@@ -242,6 +242,7 @@ MobileWidgetControls.prototype.drawButton = function(ctx, button)
     // ctx.lineWidth = 2;
     // ctx.strokeStyle = 'white';
     // ctx.stroke();
+    ctx.closePath();
 };
 
 /* STICKS */
@@ -250,12 +251,16 @@ MobileWidgetControls.PlaystationSticks = [
     {
         name: 'left',
         from: 'l', x: 150, y: 150,
-        head: 30, base: 60, grab: 150, reach: 45
+        head: 30, base: 60, grab: 150, reach: 45,
+        theme: 'dark'
     },
     {
         name: 'right',
         from: 'r', x: 150, y: 150,
-        head: 20, base: 50, grab: 150, reach: 40
+        head: 20, base: 50, grab: 150, reach: 40,
+        label: String.fromCharCode(10021),
+        labelSize: 30, labelOffset: 2, // offset i.e. for caps letters
+        theme: 'gradient'
     },
 ];
 
@@ -280,10 +285,17 @@ MobileWidgetControls.prototype.initStick = function(dw, dh, stick, reference)
     stick.held = !1;
     stick.needsUpdate = !0;
 
+    // graphics constants
     stick.STICK_HEAD_DIAMETER = reference.head;
     stick.STICK_BASE_DIAMETER = reference.base;
     stick.STICK_GRAB_DISTANCE = reference.grab;
     stick.STICK_REACH_DISTANCE = reference.reach;
+
+    // optional
+    stick.STICK_LABEL = reference.label;
+    stick.STICK_LABEL_SIZE = reference.labelSize;
+    stick.STICK_LABEL_OFFSET = reference.labelOffset;
+    stick.style = reference.theme;
 };
 
 MobileWidgetControls.prototype.initSticks = function(controllerType, dw, dh)
@@ -377,34 +389,82 @@ MobileWidgetControls.prototype.updateUp = function(event)
 
 MobileWidgetControls.prototype.drawStick = function(ctx, stick)
 {
-    ctx.beginPath();
-    ctx.globalAlpha = 0.1;
     let originXLeft = stick.modelOriginX;
     let originYLeft = stick.modelOriginY;
+
+    // Base
+    ctx.beginPath();
+    ctx.globalAlpha = 0.1;
     ctx.arc(
         originXLeft, originYLeft,
         stick.STICK_BASE_DIAMETER, 0, 2 * Math.PI
     );
-    ctx.fillStyle = 'black';
+    if (stick.style === 'gradient') {
+        let gradient = ctx.createRadialGradient(
+            originXLeft, originYLeft, 2, // inner
+            originXLeft, originYLeft, stick.STICK_BASE_DIAMETER // outer
+        );
+        gradient.addColorStop(0, 'gray');
+        gradient.addColorStop(0.7, 'gray');
+        gradient.addColorStop(0.9, 'silver');
+        gradient.addColorStop(1, 'white');
+        ctx.fillStyle = gradient;
+    } else {
+        ctx.fillStyle = 'black';
+    }
     ctx.fill();
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = 'white';
-    ctx.stroke();
+    if (stick.style !== 'gradient') {
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'white';
+        ctx.stroke();
+    }
     ctx.closePath();
 
-    ctx.beginPath();
-    ctx.globalAlpha = 0.1;
+    // Head
     let stickXLeft = stick.x;
     let stickYLeft = stick.y;
+    ctx.beginPath();
+    ctx.globalAlpha = 0.1;
     ctx.arc(
         originXLeft + stickXLeft, originYLeft + stickYLeft,
         stick.STICK_HEAD_DIAMETER, 0, 2 * Math.PI
     );
-    ctx.fillStyle = 'black';
+    if (stick.style === 'gradient') {
+        ctx.globalAlpha = 0.15;
+        let gradient = ctx.createRadialGradient(
+            originXLeft + stickXLeft, originYLeft + stickYLeft, 2, // inner
+            originXLeft + stickXLeft, originYLeft + stickYLeft, stick.STICK_HEAD_DIAMETER // outer
+        );
+        gradient.addColorStop(0, 'darkgray');
+        gradient.addColorStop(0.7, 'darkgray');
+        gradient.addColorStop(0.9, 'whitesmoke');
+        gradient.addColorStop(1, 'white');
+        ctx.fillStyle = gradient;
+    } else {
+        ctx.fillStyle = 'black';
+    }
     ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = 'white';
-    ctx.stroke();
+    if (stick.style !== 'gradient') {
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'white';
+        ctx.stroke();
+    }
+    ctx.closePath();
+
+    // Optional label
+    if (stick.STICK_LABEL && stick.STICK_LABEL_SIZE) {
+        ctx.beginPath();
+        ctx.font = `${stick.STICK_LABEL_SIZE}px Arial`;
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.globalAlpha = 0.1;
+        ctx.fillText(stick.STICK_LABEL,
+            originXLeft + stickXLeft,
+            originYLeft + stickYLeft + stick.STICK_LABEL_OFFSET
+        );
+        ctx.closePath();
+    }
 };
 
 MobileWidgetControls.prototype.draw = function()
