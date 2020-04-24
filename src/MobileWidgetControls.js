@@ -58,12 +58,13 @@ let MobileWidgetControls = function(
     this.currentDPR = dpr;
     this.CANVAS_ID = 'widget-drawing-canvas';
     this.TIME_MS_TO_GET_TO_ORIGINAL_POSITION = 60; // 400ms to relax
-    this.buttons = [];
+    this.lastTimeStamp = 0;
 
-    this.OFFSET_CENTER = 150;
+    // Model
     this.leftStick = {};
     this.rightStick = {};
-    this.lastTimeStamp = 0;
+    this.buttons = [];
+    this.fingers = [];
 
     // Graphics.
     let c = document.getElementById(this.CANVAS_ID);
@@ -79,12 +80,12 @@ let MobileWidgetControls = function(
     }
 
     // Listeners.
-    // TODO touch
     this.element.addEventListener('mousemove', e => this.updateMove(e));
     this.element.addEventListener('mousedown', e => this.updateDown(e));
     this.element.addEventListener('mouseup', e => this.updateUp(e));
     window.addEventListener('resize', () => this.resize());
 
+    // TODO touch events
     let touchListener = k => e => {
         let touches = e.touches;
         console.log(`${k}`);
@@ -104,7 +105,10 @@ let MobileWidgetControls = function(
     window.addEventListener('touchstart', touchListener('start'));
     window.addEventListener('touchmove', touchListener('move'));
     window.addEventListener('touchend', touchListener('end'));
-    window.addEventListener('touchcancel', touchListener('cancel')); // TODO see
+    window.addEventListener('touchcancel', touchListener('cancel'));
+    // TODO see touchcancel
+
+    // TODO custom callbacks
 
     // Util.
     this._resizeRequest = null;
@@ -274,8 +278,15 @@ MobileWidgetControls.prototype.initButtons = function(controllerType, dw, dh)
         if (!buttons.hasOwnProperty(bid)) continue;
         let reference = buttons[bid];
         if (!reference.x || !reference.y || !reference.diameter) continue;
+        if (!reference.name) {
+            console.error('[MobileWidgetControls] A button must have a name property.');
+        }
 
         let button = {};
+
+        // model
+        button.held = false;
+        button.id = reference.name;
 
         // mandatory graphics
         button.modelOriginX = reference.from === 'l' ? reference.x : dw - reference.x;
@@ -290,6 +301,53 @@ MobileWidgetControls.prototype.initButtons = function(controllerType, dw, dh)
         modelButtons.push(button);
     }
     this.buttons = modelButtons;
+};
+
+MobileWidgetControls.prototype.updateButtonModelHold = function(cx, cy, buttons, isHolding)
+{
+    let hasHitButton = false;
+
+    for (let i = 0, n = buttons.length; i < n; ++i)
+    {
+        // Get first hit button.
+        let b = buttons[i];
+        let d = this.distanceToObjectCenter(cx, cy, b);
+        if (d > b.BUTTON_DIAMETER) continue;
+
+        // Button hit.
+        hasHitButton = true;
+        if (b.held !== isHolding) {
+            console.log(`Button ${b.id} ${isHolding ? 'touched' : 'released'}.`);
+            // TODO propagate event.
+            b.held = isHolding;
+        }
+        break;
+    }
+
+    return hasHitButton;
+};
+
+MobileWidgetControls.prototype.updateButtonModelMove = function(cx, cy, buttons)
+{
+    let hasReleasedButton = false;
+
+    for (let i = 0, n = buttons.length; i < n; ++i)
+    {
+        // Get all buttons that are not touched.
+        let b = buttons[i];
+        let d = this.distanceToObjectCenter(cx, cy, b);
+        if (d < b.BUTTON_DIAMETER) continue;
+
+        // Button released.
+        if (b.held) {
+            hasReleasedButton = true;
+            console.log(`Button ${b.id} released.`);
+            b.held = false;
+            // TODO propagate event.
+        }
+    }
+
+    return hasReleasedButton;
 };
 
 MobileWidgetControls.prototype.drawButton = function(ctx, button)
@@ -393,14 +451,6 @@ MobileWidgetControls.prototype.initSticks = function(controllerType, dw, dh)
     this.lastTimeStamp = this.getTimeInMilliseconds();
 };
 
-MobileWidgetControls.prototype.distanceToStickCenter = function(cx, cy, stick)
-{
-    return Math.sqrt(
-        Math.pow(cx - stick.modelOriginX, 2) +
-        Math.pow(cy - stick.modelOriginY, 2)
-    );
-};
-
 MobileWidgetControls.prototype.updateStickModelFromMove = function(cx, cy, d, stick)
 {
     let vx = cx - stick.modelOriginX;
@@ -416,9 +466,9 @@ MobileWidgetControls.prototype.updateStickModelFromMove = function(cx, cy, d, st
     // console.log(`center ${stick.originX},${stick.originY}  --  mouse ${cx},${cy}  --  delta ${vx},${vy}`);
 };
 
-MobileWidgetControls.prototype.updateModelMove = function(cx, cy, stick)
+MobileWidgetControls.prototype.updateStickModelMove = function(cx, cy, stick)
 {
-    let d = this.distanceToStickCenter(cx, cy, stick);
+    let d = this.distanceToObjectCenter(cx, cy, stick);
     if (d < stick.STICK_GRAB_DISTANCE) {
         stick.needsUpdate = true;
         if (stick.held) this.updateStickModelFromMove(cx, cy, d, stick);
@@ -430,9 +480,9 @@ MobileWidgetControls.prototype.updateModelMove = function(cx, cy, stick)
     }
 };
 
-MobileWidgetControls.prototype.updateModelHold = function(cx, cy, stick, isHolding)
+MobileWidgetControls.prototype.updateStickModelHold = function(cx, cy, stick, isHolding)
 {
-    let d = this.distanceToStickCenter(cx, cy, stick);
+    let d = this.distanceToObjectCenter(cx, cy, stick);
     if (d < stick.STICK_GRAB_DISTANCE) {
         let wasHolding = stick.held;
         stick.held = isHolding;
@@ -447,8 +497,10 @@ MobileWidgetControls.prototype.updateMove = function(event)
     let dpr = this.currentDPR;
     let cx = event.clientX * dpr;
     let cy = event.clientY * dpr;
-    this.updateModelMove(cx, cy, this.leftStick);
-    this.updateModelMove(cx, cy, this.rightStick);
+    this.updateButtonModelMove(cx, cy, this.buttons);
+
+    this.updateStickModelMove(cx, cy, this.leftStick);
+    this.updateStickModelMove(cx, cy, this.rightStick);
 };
 
 MobileWidgetControls.prototype.updateDown = function(event)
@@ -456,18 +508,23 @@ MobileWidgetControls.prototype.updateDown = function(event)
     let dpr = this.currentDPR;
     let cx = event.clientX * dpr;
     let cy = event.clientY * dpr;
-    this.updateModelHold(cx, cy, this.leftStick, true);
-    this.updateModelHold(cx, cy, this.rightStick, true);
-    this.updateModelMove(cx, cy, this.leftStick);
-    this.updateModelMove(cx, cy, this.rightStick);
+    let hasHitButton = this.updateButtonModelHold(cx, cy, this.buttons, true);
+    if (hasHitButton) return;
+
+    this.updateStickModelHold(cx, cy, this.leftStick, true);
+    this.updateStickModelHold(cx, cy, this.rightStick, true);
+    this.updateStickModelMove(cx, cy, this.leftStick);
+    this.updateStickModelMove(cx, cy, this.rightStick);
 };
 
 MobileWidgetControls.prototype.updateUp = function(event)
 {
     let cx = event.clientX; let cy = event.clientY;
     let dpr = this.currentDPR;
-    this.updateModelHold(cx * dpr, cy * dpr, this.leftStick, false);
-    this.updateModelHold(cx * dpr, cy * dpr, this.rightStick, false);
+    this.updateButtonModelHold(cx, cy, this.buttons, false);
+
+    this.updateStickModelHold(cx * dpr, cy * dpr, this.leftStick, false);
+    this.updateStickModelHold(cx * dpr, cy * dpr, this.rightStick, false);
 };
 
 MobileWidgetControls.prototype.drawStick = function(ctx, stick)
@@ -603,6 +660,14 @@ MobileWidgetControls.prototype.resize = function()
 };
 
 /* UTIL */
+
+MobileWidgetControls.prototype.distanceToObjectCenter = function(cx, cy, object)
+{
+    return Math.sqrt(
+        Math.pow(cx - object.modelOriginX, 2) +
+        Math.pow(cy - object.modelOriginY, 2)
+    );
+};
 
 MobileWidgetControls.prototype.clamp = function(t, low, high)
 {
