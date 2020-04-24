@@ -15,7 +15,7 @@ let MobileWidgetCameraControls = function(
     };
     this.widgetControls = new MobileWidgetControls(
         element, onLeftStickMove, onRightStickMove, onButtonPressed,
-        'playstation'
+        'xbox'
     );
 };
 
@@ -254,23 +254,76 @@ MobileWidgetControls.PlaystationControllerButtons = [
 
 // https://patents.google.com/patent/US8641525B2/en
 MobileWidgetControls.XBoxControllerButtons = [
-    {name: 'A'},
-    {name: 'B' },
-    {name: 'X' },
-    {name: 'Y' },
-    {name: 'LB' },
-    {name: 'RB' },
-    {name: 'LT' },
-    {name: 'RT' },
-    {name: 'back' },        // select
-    {name: 'forward' },     // start
-    {name: 'stickLB' },
-    {name: 'stickRB' },
-    {name: 'dpadUp' },
-    {name: 'dpadDown' },
-    {name: 'dpadLeft' },
-    {name: 'dpadRight' },
-    {name: 'home'},
+    {name: 'A',
+        from: 'r', diameter: 25,
+        x: 80, y: 35,
+        label: 'A', labelSize: 20, labelOffset: 2,
+    },
+    {name: 'B',
+        from: 'r', diameter: 25,
+        x: 45, y: 75,
+        label: 'B', labelSize: 20, labelOffset: 2,
+    },
+    {name: 'X',
+        from: 'r', diameter: 25,
+        x: 115, y: 75,
+        label: 'X', labelSize: 20, labelOffset: 2,
+    },
+    {name: 'Y',
+        from: 'r', diameter: 25,
+        x: 80, y: 115,
+        label: 'Y', labelSize: 20, labelOffset: 2,
+    },
+    {name: 'LB',
+        from: 'l', diameter: 35,
+        x: 135, y: 205,
+        label: 'LB', labelSize: 20, labelOffset: 2,
+    },
+    {name: 'RB',
+        from: 'r', diameter: 35,
+        x: 130, y: 180,
+        label: 'RB', labelSize: 20, labelOffset: 2,
+    },
+    {name: 'LT',
+        from: 'l', diameter: 35,
+        x: 45, y: 210,
+        label: 'LT', labelSize: 20, labelOffset: 2,
+    },
+    {name: 'RT',
+        from: 'r', diameter: 35,
+        x: 45, y: 200,
+        label: 'RT', labelSize: 20, labelOffset: 2,
+    },
+    {name: 'back',
+    },        // select
+    {name: 'forward',
+    },     // start
+    {name: 'stickLB',
+    },
+    {name: 'stickRB',
+    },
+    {name: 'dpadUp',
+        from: 'l', diameter: 15,
+        x: 220, y: 73,
+        label: String.fromCharCode(8593), labelSize: 20, labelOffset: 0,
+    },
+    {name: 'dpadDown',
+        from: 'l', diameter: 15,
+        x: 220, y: 27,
+        label: String.fromCharCode(8595), labelSize: 20, labelOffset: 0,
+    },
+    {name: 'dpadLeft',
+        from: 'l', diameter: 15,
+        x: 197, y: 50,
+        label: String.fromCharCode(8592), labelSize: 20, labelOffset: 0,
+    },
+    {name: 'dpadRight',
+        x: 243, y: 50,
+        from: 'l', diameter: 15,
+        label: String.fromCharCode(8594), labelSize: 20, labelOffset: 0,
+    },
+    {name: 'home',
+    },
 ];
 
 MobileWidgetControls.prototype.initButtons = function(controllerType, dw, dh)
@@ -473,14 +526,14 @@ MobileWidgetControls.PlaystationSticks = [
 MobileWidgetControls.XBoxSticks = [
     {
         name: 'left',
-        from: 'l', x: 150, y: 150,
-        head: 20, base: 50, grab: 150, reach: 40,
+        from: 'l', x: 90, y: 90,
+        head: 35, base: 80, grab: 150, reach: 65,
         theme: 'dark'
     },
     {
         name: 'right',
-        from: 'r', x: 150, y: 150,
-        head: 20, base: 50, grab: 150, reach: 40,
+        from: 'r', x: 240, y: 80,
+        head: 30, base: 70, grab: 130, reach: 55,
         theme: 'dark'
     },
 ];
