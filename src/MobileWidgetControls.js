@@ -166,46 +166,50 @@ MobileWidgetControls.PlaystationControllerButtons = [
     {name: 'cross',
         from: 'r', x: 85, y: 75,
         label: String.fromCharCode(10761),
-        labelSize: 30, diameter: 30,
-        labelOffset: 2
+        labelSize: 30, diameter: 30, labelOffset: 2,
+        theme: 'gradient'
     },
     {name: 'circle',
         from: 'r', x: 40, y: 120,
         labelSize: 23, diameter: 30,
-        label: String.fromCharCode(9711),
-        labelOffset: 2
+        label: String.fromCharCode(9711), labelOffset: 2,
+        theme: 'gradient'
     },
     {name: 'square',
         from: 'r', x: 130, y: 120,
         labelSize: 36, diameter: 30,
-        label: String.fromCharCode(9723),
-        labelOffset: 2
+        label: String.fromCharCode(9723), labelOffset: 2,
+        theme: 'gradient'
     },
     {name: 'triangle',
         from: 'r', x: 85, y: 165,
         labelSize: 35, diameter: 30,
-        label: String.fromCharCode(9651),
-        labelOffset: 0
+        label: String.fromCharCode(9651), labelOffset: 0,
+        theme: 'gradient'
     },
     {name: 'L1',
         from: 'l', x: 110, y: 260,
         labelSize: 30, diameter: 30,
-        label: 'L1', labelOffset: 3
+        label: 'L1', labelOffset: 3,
+        theme: 'gradient'
     },
     {name: 'R1',
         from: 'r', x: 110, y: 260,
         labelSize: 30, diameter: 30,
-        label: 'R1', labelOffset: 3
+        label: 'R1', labelOffset: 3,
+        theme: 'gradient'
     },
     {name: 'L2',
         from: 'l', x: 50, y: 280,
         labelSize: 30, diameter: 30,
-        label: 'L2', labelOffset: 3
+        label: 'L2', labelOffset: 3,
+        theme: 'gradient'
     },
     {name: 'R2',
         from: 'r', x: 50, y: 280,
         labelSize: 30, diameter: 30,
-        label: 'R2', labelOffset: 3
+        label: 'R2', labelOffset: 3,
+        theme: 'gradient'
     },
     {name: 'back' },        // select
     {name: 'forward' },     // start
@@ -215,31 +219,36 @@ MobileWidgetControls.PlaystationControllerButtons = [
         from: 'l', x: 65, y: 205,
         label: String.fromCharCode(8593),
         labelSize: 20, diameter: 23,
-        labelOffset: 0
+        labelOffset: 0,
+        theme: 'gradient'
     },
     {name: 'dpadDown',
         from: 'l', x: 65, y: 135,
         label: String.fromCharCode(8595),
         labelSize: 20, diameter: 23,
-        labelOffset: 0
+        labelOffset: 0,
+        theme: 'gradient'
     },
     {name: 'dpadLeft',
         from: 'l', x: 30, y: 170,
         label: String.fromCharCode(8592),
         labelSize: 20, diameter: 23,
-        labelOffset: 0
+        labelOffset: 0,
+        theme: 'gradient'
     },
     {name: 'dpadRight',
         from: 'l', x: 100, y: 170,
         label: String.fromCharCode(8594),
         labelSize: 20, diameter: 23,
-        labelOffset: 0
+        labelOffset: 0,
+        theme: 'gradient'
     },
     {name: 'home',
         // from: 'l', x: 300, y: 150,
         // label: 'PS',
         // labelSize: 10, diameter: 20,
-        // labelOffset: 2
+        // labelOffset: 2,
+        // theme: 'gradient'
     },
 ];
 
@@ -299,6 +308,7 @@ MobileWidgetControls.prototype.initButtons = function(controllerType, dw, dh)
         button.modelOriginX = reference.from === 'l' ? dpr * reference.x : dw - dpr * reference.x;
         button.modelOriginY = dh - dpr * reference.y;
         button.BUTTON_DIAMETER = dpr * reference.diameter;
+        button.style = reference.theme;
 
         // optional
         button.BUTTON_LABEL = reference.label;
@@ -378,11 +388,28 @@ MobileWidgetControls.prototype.drawButton = function(ctx, button)
         originXLeft, originYLeft,
         button.BUTTON_DIAMETER, 0, 2 * Math.PI
     );
-    ctx.fillStyle = button.held ? '#222222' : 'black';
+
+    // ctx.fillStyle = button.held ? '#222222' : 'black';
+
+    if (button.style === 'gradient') {
+        let gradient = ctx.createRadialGradient(
+            originXLeft, originYLeft, 2, // inner
+            originXLeft, originYLeft, button.BUTTON_DIAMETER // outer
+        );
+        gradient.addColorStop(0, button.held ? 'silver' : 'black');
+        gradient.addColorStop(0.7, button.held ? 'silver' : 'black');
+        gradient.addColorStop(0.9, 'silver');
+        gradient.addColorStop(1, 'silver');
+        ctx.fillStyle = gradient;
+    } else {
+        ctx.fillStyle = button.held ? '#222222' : 'black';
+    }
     ctx.fill();
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = 'white';
-    ctx.stroke();
+    if (button.style !== 'gradient') {
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'white';
+        ctx.stroke();
+    }
     ctx.closePath();
 
     // Label
