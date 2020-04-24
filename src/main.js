@@ -44,7 +44,7 @@ function init()
     let container = document.getElementById('container');
     renderer = new WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(WIDTH - 50, HEIGHT - 50);
+    renderer.setSize(WIDTH, HEIGHT);
     container.appendChild(renderer.domElement);
 
     scene = new Scene();

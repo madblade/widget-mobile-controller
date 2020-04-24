@@ -151,12 +151,34 @@ MobileWidgetControls.prototype.init = function()
 
 /* BUTTONS */
 
-// https://www.w3.org/TR/gamepad/
+// button order: see https://www.w3.org/TR/gamepad/
+
+// https://patents.google.com/patent/US20130215024A1/en
 MobileWidgetControls.PlaystationControllerButtons = [
-    {name: 'cross' },
-    {name: 'circle' },
-    {name: 'square' },
-    {name: 'triangle' },
+    {name: 'cross',
+        from: 'r', x: 150, y: 300,
+        label: String.fromCharCode(10761),
+        labelSize: 30, diameter: 30,
+        labelOffset: 2
+    },
+    {name: 'circle',
+        from: 'r', x: 100, y: 350,
+        labelSize: 23, diameter: 30,
+        label: String.fromCharCode(9711),
+        labelOffset: 2
+    },
+    {name: 'square',
+        from: 'r', x: 200, y: 350,
+        labelSize: 36, diameter: 30,
+        label: String.fromCharCode(9723),
+        labelOffset: 2
+    },
+    {name: 'triangle',
+        from: 'r', x: 150, y: 400,
+        labelSize: 35, diameter: 30,
+        label: String.fromCharCode(9651),
+        labelOffset: 0
+    },
     {name: 'L1' },
     {name: 'R1' },
     {name: 'L2' },
@@ -172,6 +194,7 @@ MobileWidgetControls.PlaystationControllerButtons = [
     {name: 'home' },
 ];
 
+// https://patents.google.com/patent/US8641525B2/en
 MobileWidgetControls.XBoxControllerButtons = [
     {name: 'A'},
     {name: 'B' },
@@ -205,19 +228,33 @@ MobileWidgetControls.prototype.initButtons = function(controllerType, dw, dh)
         default: return;
     }
 
+    let modelButtons = [];
     for (let bid in buttons) {
         if (!buttons.hasOwnProperty(bid)) continue;
-        let button = buttons[bid];
-        // button.modelOriginX = button.offsetX;
-        // button.modelOriginY = dh - button.offsetY;
-        // TODO from left and from right
+        let reference = buttons[bid];
+        if (!reference.x || !reference.y || !reference.diameter) continue;
+
+        let button = {};
+
+        // mandatory graphics
+        button.modelOriginX = reference.from === 'l' ? reference.x : dw - reference.x;
+        button.modelOriginY = dh - reference.y;
+        button.BUTTON_DIAMETER = reference.diameter;
+
+        // optional
+        button.BUTTON_LABEL = reference.label;
+        button.BUTTON_LABEL_SIZE = reference.labelSize;
+        button.BUTTON_LABEL_OFFSET = reference.labelOffset;
+
+        modelButtons.push(button);
     }
+    this.buttons = modelButtons;
 };
 
 MobileWidgetControls.prototype.drawButton = function(ctx, button)
 {
     ctx.beginPath();
-    ctx.globalAlpha = 0.1;
+    ctx.globalAlpha = 0.3;
     let originXLeft = button.modelOriginX;
     let originYLeft = button.modelOriginY;
     ctx.arc(
@@ -236,8 +273,10 @@ MobileWidgetControls.prototype.drawButton = function(ctx, button)
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.globalAlpha = 0.1;
-    ctx.fillText(button.BUTTON_LABEL, originXLeft, originYLeft);
+    ctx.globalAlpha = 0.4;
+    ctx.fillText(button.BUTTON_LABEL,
+        originXLeft, originYLeft + (button.BUTTON_LABEL_OFFSET || 0)
+    );
     // ctx.fill();
     // ctx.lineWidth = 2;
     // ctx.strokeStyle = 'white';
@@ -252,14 +291,15 @@ MobileWidgetControls.PlaystationSticks = [
         name: 'left',
         from: 'l', x: 150, y: 150,
         head: 30, base: 60, grab: 150, reach: 45,
-        theme: 'dark'
+        theme: 'gradient'
     },
     {
         name: 'right',
         from: 'r', x: 150, y: 150,
         head: 20, base: 50, grab: 150, reach: 40,
-        label: String.fromCharCode(10021),
-        labelSize: 30, labelOffset: 2, // offset i.e. for caps letters
+        // label: String.fromCharCode(10021), // multi-directional cross
+        // labelSize: 30,
+        // labelOffset: 2, // offset i.e. for caps letters
         theme: 'gradient'
     },
 ];
@@ -268,12 +308,14 @@ MobileWidgetControls.XBoxSticks = [
     {
         name: 'left',
         from: 'l', x: 150, y: 150,
-        head: 20, base: 50, grab: 150, reach: 40
+        head: 20, base: 50, grab: 150, reach: 40,
+        theme: 'dark'
     },
     {
         name: 'right',
         from: 'r', x: 150, y: 150,
-        head: 20, base: 50, grab: 150, reach: 40
+        head: 20, base: 50, grab: 150, reach: 40,
+        theme: 'dark'
     },
 ];
 
@@ -461,7 +503,7 @@ MobileWidgetControls.prototype.drawStick = function(ctx, stick)
         ctx.globalAlpha = 0.1;
         ctx.fillText(stick.STICK_LABEL,
             originXLeft + stickXLeft,
-            originYLeft + stickYLeft + stick.STICK_LABEL_OFFSET
+            originYLeft + stickYLeft + (stick.STICK_LABEL_OFFSET || 0)
         );
         ctx.closePath();
     }
@@ -475,24 +517,10 @@ MobileWidgetControls.prototype.draw = function()
 
     this.drawStick(ctx, this.leftStick);
     this.drawStick(ctx, this.rightStick);
-    this.drawButton(ctx,
-        {
-            modelOriginX: 0.5 * (this.leftStick.modelOriginX + this.rightStick.modelOriginX),
-            modelOriginY: 0.5 * (this.leftStick.modelOriginY + this.rightStick.modelOriginY),
-            BUTTON_DIAMETER: 50, BUTTON_LABEL:
-                String.fromCharCode(9711) +
-                String.fromCharCode(9723) +
-                String.fromCharCode(9651) +
-                String.fromCharCode(10761),
-            // String.fromCharCode(215) +
-            // String.fromCharCode(8855) +
-            // String.fromCharCode(10005) +
-            // String.fromCharCode(10006) +
-            // String.fromCharCode(9675) +
-            // String.fromCharCode(9633)
-            BUTTON_LABEL_SIZE: 30
-        }
-    );
+    let buttons = this.buttons;
+    for (let i = 0, n = buttons.length; i < n; ++i) {
+        this.drawButton(ctx, buttons[i]);
+    }
 };
 
 MobileWidgetControls.prototype.interpolateStick = function(stick, newTime)
