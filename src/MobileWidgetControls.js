@@ -95,16 +95,28 @@ let MobileWidgetControls = function(
     let touchListener = k => e => {
         let touches = e.touches;
         console.log(`${k}`);
+        console.log(e);
+        console.log(touches);
+        this.fingers = [];
         for (let i = 0; i < touches.length; ++i) {
             let touch = touches[i];
             let x = touch.clientX;
             let y = touch.clientY;
+            this.fingers.push({x, y});
             console.log(`${x},${y},${k}`);
             // let el = document.elementFromPoint(x, y);
             // if (!el) continue;
             // switch (el.id) {
             //     default: break;
             // }
+        }
+
+        let changedTouches = e.changedTouches;
+        for (let i = 0; i < changedTouches.length; ++i) {
+            let touch = changedTouches[i];
+            if (k === 'end') this.updateUp(touch);
+            else if (k === 'move') this.updateMove(touch);
+            else if (k === 'start') this.updateDown(touch);
         }
     };
 
@@ -417,6 +429,7 @@ MobileWidgetControls.prototype.updateButtonModelMove = function(cx, cy, buttons)
 
         // Button released.
         // TODO do that for all fingers
+        let f = this.fingers;
         if (b.held) {
             hasReleasedButton = true;
             // console.log(`Button ${b.id} released.`);
