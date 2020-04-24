@@ -9,8 +9,8 @@ let MobileWidgetCameraControls = function(
     let onRightStickMove = function(x, y) {
         console.log(`right ${x},${y}`);
     };
-    let onButtonPressed = function(which) {
-        console.log(`button ${which}`);
+    let onButtonPressed = function(which, isHeld) {
+        console.log(`button ${which} ${isHeld ? 'pressed' : 'released'}.`);
     };
     this.widgetControls = new MobileWidgetControls(
         element, onLeftStickMove, onRightStickMove, onButtonPressed
@@ -303,6 +303,11 @@ MobileWidgetControls.prototype.initButtons = function(controllerType, dw, dh)
     this.buttons = modelButtons;
 };
 
+MobileWidgetControls.prototype.notifyButtonChanged = function(button, isHolding)
+{
+    if (this.buttonPressCallback) this.buttonPressCallback(button.id, isHolding);
+};
+
 MobileWidgetControls.prototype.updateButtonModelHold = function(cx, cy, buttons, isHolding)
 {
     let hasHitButton = false;
@@ -317,9 +322,11 @@ MobileWidgetControls.prototype.updateButtonModelHold = function(cx, cy, buttons,
         // Button hit.
         hasHitButton = true;
         if (b.held !== isHolding) {
-            console.log(`Button ${b.id} ${isHolding ? 'touched' : 'released'}.`);
-            // TODO propagate event.
+            // console.log(`Button ${b.id} ${isHolding ? 'touched' : 'released'}.`);
             b.held = isHolding;
+
+            // Propagate event.
+            this.notifyButtonChanged(b, isHolding);
         }
         break;
     }
@@ -341,9 +348,11 @@ MobileWidgetControls.prototype.updateButtonModelMove = function(cx, cy, buttons)
         // Button released.
         if (b.held) {
             hasReleasedButton = true;
-            console.log(`Button ${b.id} released.`);
+            // console.log(`Button ${b.id} released.`);
             b.held = false;
-            // TODO propagate event.
+
+            // Propagate.
+            this.notifyButtonChanged(b, false);
         }
     }
 
@@ -451,6 +460,15 @@ MobileWidgetControls.prototype.initSticks = function(controllerType, dw, dh)
     this.lastTimeStamp = this.getTimeInMilliseconds();
 };
 
+MobileWidgetControls.prototype.notifyStickMoved = function(vx, vy, stick)
+{
+    if (stick === this.leftStick) {
+        if (this.leftStickMoveCallback) this.leftStickMoveCallback(vx, vy);
+    } else if (stick === this.rightStick) {
+        if (this.rightStickMoveCallback) this.rightStickMoveCallback(vx, vy);
+    }
+};
+
 MobileWidgetControls.prototype.updateStickModelFromMove = function(cx, cy, d, stick)
 {
     let vx = cx - stick.modelOriginX;
@@ -463,16 +481,17 @@ MobileWidgetControls.prototype.updateStickModelFromMove = function(cx, cy, d, st
     stick.y = vy;
     stick.lastHeldX = vx;
     stick.lastHeldY = vy;
-    // console.log(`center ${stick.originX},${stick.originY}  --  mouse ${cx},${cy}  --  delta ${vx},${vy}`);
+
+    this.notifyStickMoved(vx, vy, stick);
 };
 
 MobileWidgetControls.prototype.updateStickModelMove = function(cx, cy, stick)
 {
     let d = this.distanceToObjectCenter(cx, cy, stick);
-    if (d < stick.STICK_GRAB_DISTANCE) {
+    if (d < stick.STICK_GRAB_DISTANCE) { // stick grab
         stick.needsUpdate = true;
         if (stick.held) this.updateStickModelFromMove(cx, cy, d, stick);
-    } else if (stick.held) {
+    } else if (stick.held) { // stick release
         stick.held = false;
         stick.needsUpdate = true;
         this.updateStickModelFromMove(cx, cy, d, stick);
@@ -633,6 +652,10 @@ MobileWidgetControls.prototype.interpolateStick = function(stick, newTime)
         stick.needsUpdate = false;
     stick.x = newX;
     stick.y = newY;
+
+    // Propagate event.
+    if (stick.needsUpdate)
+        this.notifyStickMoved(newX, newY, stick);
 };
 
 MobileWidgetControls.prototype.animate = function()
