@@ -11,6 +11,7 @@ let MobileWidgetCameraControls = function(
     };
     let onButtonPressed = function(which, isHeld) {
         console.log(`button ${which} ${isHeld ? 'pressed' : 'released'}.`);
+        console.log(window.devicePixelRatio);
     };
     this.widgetControls = new MobileWidgetControls(
         element, onLeftStickMove, onRightStickMove, onButtonPressed
@@ -55,7 +56,12 @@ let MobileWidgetControls = function(
     this.buttonPressCallback = onButtonPress;
     this.controllerType = controllerType ? controllerType : 'playstation';
 
+    // Device pixel ratio trick to correctly initialize the model on mobile
+    // (where zooming is disabled)
+    // and to keep the model the right size when zooming on desktop.
     this.currentDPR = dpr;
+    this.initialDPR = dpr;
+
     this.CANVAS_ID = 'widget-drawing-canvas';
     this.TIME_MS_TO_GET_TO_ORIGINAL_POSITION = 60; // 400ms to relax
 
@@ -183,22 +189,22 @@ MobileWidgetControls.PlaystationControllerButtons = [
     {name: 'L1',
         from: 'l', x: 150, y: 450,
         labelSize: 30, diameter: 30,
-        label: 'L1', labelOffset: 0
+        label: 'L1', labelOffset: 3
     },
     {name: 'R1',
         from: 'r', x: 150, y: 450,
         labelSize: 30, diameter: 30,
-        label: 'R1', labelOffset: 0
+        label: 'R1', labelOffset: 3
     },
     {name: 'L2',
         from: 'l', x: 200, y: 450,
         labelSize: 30, diameter: 30,
-        label: 'L2', labelOffset: 0
+        label: 'L2', labelOffset: 3
     },
     {name: 'R2',
         from: 'r', x: 200, y: 450,
         labelSize: 30, diameter: 30,
-        label: 'R2', labelOffset: 0
+        label: 'R2', labelOffset: 3
     },
     {name: 'back' },        // select
     {name: 'forward' },     // start
@@ -208,25 +214,25 @@ MobileWidgetControls.PlaystationControllerButtons = [
         from: 'l', x: 150, y: 400,
         label: String.fromCharCode(8593),
         labelSize: 30, diameter: 30,
-        labelOffset: 2
+        labelOffset: 0
     },
     {name: 'dpadDown',
         from: 'l', x: 150, y: 300,
         label: String.fromCharCode(8595),
         labelSize: 30, diameter: 30,
-        labelOffset: 2
+        labelOffset: 0
     },
     {name: 'dpadLeft',
         from: 'l', x: 100, y: 350,
         label: String.fromCharCode(8592),
         labelSize: 30, diameter: 30,
-        labelOffset: 2
+        labelOffset: 0
     },
     {name: 'dpadRight',
         from: 'l', x: 200, y: 350,
         label: String.fromCharCode(8594),
         labelSize: 30, diameter: 30,
-        labelOffset: 2
+        labelOffset: 0
     },
     {name: 'home',
         from: 'l', x: 300, y: 150,
@@ -270,6 +276,7 @@ MobileWidgetControls.prototype.initButtons = function(controllerType, dw, dh)
         default: return;
     }
 
+    let dpr = this.initialDPR;
     let modelButtons = [];
     for (let bid in buttons) {
         if (!buttons.hasOwnProperty(bid)) continue;
@@ -286,14 +293,14 @@ MobileWidgetControls.prototype.initButtons = function(controllerType, dw, dh)
         button.id = reference.name;
 
         // mandatory graphics
-        button.modelOriginX = reference.from === 'l' ? reference.x : dw - reference.x;
-        button.modelOriginY = dh - reference.y;
-        button.BUTTON_DIAMETER = reference.diameter;
+        button.modelOriginX = reference.from === 'l' ? dpr * reference.x : dw - dpr * reference.x;
+        button.modelOriginY = dh - dpr * reference.y;
+        button.BUTTON_DIAMETER = dpr * reference.diameter;
 
         // optional
         button.BUTTON_LABEL = reference.label;
-        button.BUTTON_LABEL_SIZE = reference.labelSize;
-        button.BUTTON_LABEL_OFFSET = reference.labelOffset;
+        button.BUTTON_LABEL_SIZE = dpr * reference.labelSize;
+        button.BUTTON_LABEL_OFFSET = dpr * reference.labelOffset;
 
         modelButtons.push(button);
     }
@@ -428,22 +435,23 @@ MobileWidgetControls.XBoxSticks = [
 
 MobileWidgetControls.prototype.initStick = function(dw, dh, stick, reference)
 {
+    let dpr = this.initialDPR;
     stick.x = stick.y = stick.lastHeldX = stick.lastHeldY = stick.timeStampReleased = 0;
-    stick.modelOriginX = reference.from === 'l' ? reference.x : dw - reference.x;
-    stick.modelOriginY = dh - reference.y;
+    stick.modelOriginX = reference.from === 'l' ? dpr * reference.x : dw - dpr * reference.x;
+    stick.modelOriginY = dh - dpr * reference.y;
     stick.held = !1;
     stick.needsUpdate = !0;
 
     // graphics constants
-    stick.STICK_HEAD_DIAMETER = reference.head;
-    stick.STICK_BASE_DIAMETER = reference.base;
-    stick.STICK_GRAB_DISTANCE = reference.grab;
-    stick.STICK_REACH_DISTANCE = reference.reach;
+    stick.STICK_HEAD_DIAMETER = dpr * reference.head;
+    stick.STICK_BASE_DIAMETER = dpr * reference.base;
+    stick.STICK_GRAB_DISTANCE = dpr * reference.grab;
+    stick.STICK_REACH_DISTANCE = dpr * reference.reach;
 
     // optional
     stick.STICK_LABEL = reference.label;
-    stick.STICK_LABEL_SIZE = reference.labelSize;
-    stick.STICK_LABEL_OFFSET = reference.labelOffset;
+    stick.STICK_LABEL_SIZE = dpr * reference.labelSize;
+    stick.STICK_LABEL_OFFSET = dpr * reference.labelOffset;
     stick.style = reference.theme;
 };
 
@@ -459,10 +467,12 @@ MobileWidgetControls.prototype.initSticks = function(controllerType, dw, dh)
 
 MobileWidgetControls.prototype.notifyStickMoved = function(vx, vy, stick)
 {
+    let normX = vx / stick.STICK_REACH_DISTANCE;
+    let normY = vy / stick.STICK_REACH_DISTANCE;
     if (stick === this.leftStick) {
-        if (this.leftStickMoveCallback) this.leftStickMoveCallback(vx, vy);
+        if (this.leftStickMoveCallback) this.leftStickMoveCallback(normX, normY);
     } else if (stick === this.rightStick) {
-        if (this.rightStickMoveCallback) this.rightStickMoveCallback(vx, vy);
+        if (this.rightStickMoveCallback) this.rightStickMoveCallback(normX, normY);
     }
 };
 
@@ -513,6 +523,7 @@ MobileWidgetControls.prototype.updateMove = function(event)
     let dpr = this.currentDPR;
     let cx = event.clientX * dpr;
     let cy = event.clientY * dpr;
+
     this.updateButtonModelMove(cx, cy, this.buttons);
 
     this.updateStickModelMove(cx, cy, this.leftStick);
@@ -535,12 +546,14 @@ MobileWidgetControls.prototype.updateDown = function(event)
 
 MobileWidgetControls.prototype.updateUp = function(event)
 {
-    let cx = event.clientX; let cy = event.clientY;
     let dpr = this.currentDPR;
+    let cx = dpr * event.clientX;
+    let cy = dpr * event.clientY;
+
     this.updateButtonModelHold(cx, cy, this.buttons, false);
 
-    this.updateStickModelHold(cx * dpr, cy * dpr, this.leftStick, false);
-    this.updateStickModelHold(cx * dpr, cy * dpr, this.rightStick, false);
+    this.updateStickModelHold(cx, cy, this.leftStick, false);
+    this.updateStickModelHold(cx, cy, this.rightStick, false);
 };
 
 MobileWidgetControls.prototype.drawStick = function(ctx, stick)
