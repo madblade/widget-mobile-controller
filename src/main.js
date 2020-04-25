@@ -13,7 +13,7 @@ import {
     MobileWidgetCameraControls,
 } from './MobileWidgetCameraControls';
 
-// scene size
+// screen size
 let WIDTH = window.innerWidth;
 let HEIGHT = window.innerHeight;
 
@@ -40,11 +40,11 @@ function init()
     else
         console.log('[main] This is not a touch device.');
 
-    let container = document.getElementById('container');
+    // let container = document.getElementById('container');
     renderer = new WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(WIDTH, HEIGHT);
-    container.appendChild(renderer.domElement);
+    document.body.appendChild(renderer.domElement);
 
     scene = new Scene();
     scene.background = new Color(0x444444);
@@ -70,11 +70,13 @@ function init()
     scene.add(cube);
 
     // Resize renderer.
-    window.addEventListener('resize', () => {
+    let resizeCallback =  () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-    }, false);
+    };
+    window.addEventListener('resize', resizeCallback, false);
+    window.addEventListener('orientationchange', resizeCallback, false);
 
     // HERE.
     let widget = document.getElementById('widget');

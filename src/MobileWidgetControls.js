@@ -23,9 +23,9 @@ let MobileWidgetControls = function(
     if (!(element instanceof HTMLElement))
         throw Error('[MobileWidgetControls] Expected element to be an HTMLElement.');
 
-    const isTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints > 0;
-    if (!isTouch)
-        throw Error('[MobileWidgetControls] Device does not appear to support touch events.');
+    // const isTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints > 0;
+    // if (!isTouch)
+    //     throw Error('[MobileWidgetControls] Device does not appear to support touch events.');
 
     let w = window.innerWidth;
     let h = window.innerHeight;
@@ -64,7 +64,7 @@ let MobileWidgetControls = function(
         this.canvas.setAttribute('id', this.CANVAS_ID);
         this.canvas.setAttribute('width', `${w}`);
         this.canvas.setAttribute('height', `${h}`);
-        this.canvas.setAttribute('style', 'position: absolute; width: 100%; bottom: 0; z-index: 999;');
+        this.canvas.setAttribute('style', 'position: absolute; width: 100%; bottom: 0px; z-index: 999;');
         this.element.appendChild(this.canvas);
     } else {
         this.canvas = c;
@@ -79,10 +79,18 @@ let MobileWidgetControls = function(
 
     // Rescale canvas and event/drawable coordinates with devicePixelRatio.
     window.addEventListener('resize', () => this.resize());
+    window.addEventListener('orientationchange', () => this.resize());
 
     // Main listener.
     let touchListener = k => e =>
     {
+        if (k === 'start')
+            e.preventDefault();
+        if (k === 'move') {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
         this.fingers = [];
         if (k === 'cancel') {
             console.error('[MobileWidgetControls] Too many fingers or unsupported action.');
@@ -109,10 +117,10 @@ let MobileWidgetControls = function(
     };
 
     // Binding to the actual events.
-    window.addEventListener('touchstart', touchListener('start'));
-    window.addEventListener('touchmove', touchListener('move'));
-    window.addEventListener('touchend', touchListener('end'));
-    window.addEventListener('touchcancel', touchListener('cancel'));
+    this.canvas.addEventListener('touchstart', touchListener('start'), false);
+    this.canvas.addEventListener('touchmove', touchListener('move'), false);
+    this.canvas.addEventListener('touchend', touchListener('end'), false);
+    this.canvas.addEventListener('touchcancel', touchListener('cancel'), false);
 
     // Internal.
     this._resizeRequest = null;
@@ -500,7 +508,7 @@ MobileWidgetControls.prototype.drawButton = function(ctx, button)
 MobileWidgetControls.DefaultSticks = [
     {
         name: 'left',
-        from: 'l', x: 80, y: 80,
+        from: 'l', x: 100, y: 120,
         head: 25, base: 70, grab: 150, reach: 55,
         label: String.fromCharCode(10021), // multi-directional cross
         labelSize: 30,
@@ -509,7 +517,7 @@ MobileWidgetControls.DefaultSticks = [
     },
     {
         name: 'right',
-        from: 'r', x: 80, y: 80,
+        from: 'r', x: 100, y: 120,
         head: 25, base: 70, grab: 150, reach: 55,
         label: String.fromCharCode(10021), // multi-directional cross
         labelSize: 30,
@@ -835,8 +843,14 @@ MobileWidgetControls.prototype.resize = function()
 {
     if (this._resizeRequest) clearTimeout(this._resizeRequest);
     this._resizeRequest = setTimeout(() => {
+        //
+        // On recent iOS Safari, open tabs create an offset
+        window.scrollTo(0, document.body.scrollHeight);
+
+        // Recompute everything.
         this.init();
-    }, 100);
+    }, 100 // Don’t resize every frame.
+    );
 };
 
 /* UTIL */

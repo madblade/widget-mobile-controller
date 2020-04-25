@@ -32,8 +32,8 @@ let MobileWidgetCameraControls = function(
 ) {
     this.camera = camera;
     this.controlsType = controlsType;
-    this.cameraMovementSpeed = 1 / 100;
-    this.cameraRotationSpeed = 1 / 100;
+    this.cameraMovementSpeed = 1 / 4;
+    this.cameraRotationSpeed = 1 / 75;
 
     // Stick states
     this.leftX = 0;
@@ -118,11 +118,11 @@ MobileWidgetCameraControls.prototype.animate = function()
     let dx = this.leftX * cameraMovementSpeed;
     let dy = this.leftY * cameraMovementSpeed;
     let forwardVector = this.getForwardVector(dx, -dy);
-    this.camera.position.x += forwardVector.x;
-    this.camera.position.z += forwardVector.z;
+    this.camera.position.x += forwardVector.x * cameraMovementSpeed;
+    this.camera.position.z += forwardVector.z * cameraMovementSpeed;
     // Projection on the (xz) plane if not quaternion.
     if (this.controlsType === 'quaternion') {
-        this.camera.position.y += forwardVector.y;
+        this.camera.position.y += forwardVector.y * cameraMovementSpeed;
     }
 
     // 3. Update gamepad model.
