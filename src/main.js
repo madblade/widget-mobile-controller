@@ -4,15 +4,14 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 // scene size
 import {
     Color,
-    DoubleSide,
-    HemisphereLight, Mesh, MeshPhongMaterial,
+    Mesh, MeshPhongMaterial,
     PerspectiveCamera, PointLight,
-    Scene, TorusKnotBufferGeometry, Vector3,
+    Scene, TorusKnotBufferGeometry,
     WebGLRenderer
 } from 'three';
 import {
     MobileWidgetCameraControls,
-} from './MobileWidgetControls';
+} from './MobileWidgetCameraControls';
 
 // scene size
 let WIDTH = window.innerWidth;

@@ -13,7 +13,7 @@ module.exports = function(env) {
                 template: './src/index.html',
                 // favicon: './src/img/favicon.ico',
                 baseUrl: env.development ?
-                    '/' : 'https://madblade.github.io/target/'
+                    '/' : 'https://madblade.github.io/widget-mobile-controller/'
             }),
             new webpack.HotModuleReplacementPlugin()
         ],
