@@ -1,43 +1,145 @@
 
+import { Quaternion, Vector3 } from 'three';
+
+/**
+ * THREE.JS mobile camera FPS control.
+ * @param element
+ *      HTML element used to draw the canvas.
+ *      For example a
+ *      <div id="widget"> just under the body tag.
+ * @param camera
+ *      Three.JS PerspectiveCamera or .
+ * @param controlsType
+ *      'quaternion' for unconstrained Quaternion.
+ *      'spherical' for XZ-constrained Euler angles
+ *          (better for games where the player stays up).
+ *      Feel free to adapt to your needs.
+ * @param controlsTheme
+ *      Supported themes:
+ *      'playstation', 'xbox', 'default'
+ * @constructor
+ */
 let MobileWidgetCameraControls = function(
-    element, camera)
-{
+    element, camera,
+    controlsType,
+    controlsTheme
+) {
     this.camera = camera;
+    this.controlsType = controlsType;
+    this.cameraMovementSpeed = 1 / 100;
+    this.cameraRotationSpeed = 1 / 100;
+
+    // Stick states
     this.leftX = 0;
     this.leftY = 0;
     this.rightX = 0;
     this.rightY = 0;
+
+    // For Euler-type controls
+    this.rx = 0;
+    this.ry = 0;
+
+    // Callbacks
     let onLeftStickMove = (x, y) => {
         this.leftX = x;
         this.leftY = y;
-        console.log(`left ${x},${y}`);
     };
+
     let onRightStickMove = (x, y) => {
         this.rightX = x;
         this.rightY = y;
-        console.log(`right ${x},${y}`);
     };
+
     let onButtonPressed = (which, isHeld) => {
         console.log(`button ${which} ${isHeld ? 'pressed' : 'released'}.`);
     };
+
     this.widgetControls = new MobileWidgetControls(
         element, onLeftStickMove, onRightStickMove, onButtonPressed,
-        'xbox'
+        controlsTheme || 'default'
     );
+
+    // Prevent user from selecting text while moving fingers about.
+    this.widgetControls.makeDocumentUnselectable();
 };
 
+/**
+ * animation utility function
+ * !!!To be called at every playable/gameplay-refresh frame!!!
+ */
 MobileWidgetCameraControls.prototype.animate = function()
 {
-    this.camera.position.x += this.leftX / 100;
-    this.camera.position.z += this.leftY / 100;
+    // 1. Camera rotation.
+    let cameraRotationSpeed = this.cameraRotationSpeed;
+    let deltaX = this.rightX * cameraRotationSpeed;
+    let deltaZ = this.rightY * cameraRotationSpeed;
+    switch (this.controlsType) {
+        case 'quaternion':
+            let q = new Quaternion();
+            if (Math.abs(deltaZ) > 0) {
+                q.set(-deltaZ, 0, 0, 1).normalize();
+                this.camera.quaternion.multiply(q);
+            }
+            if (Math.abs(deltaX) > 0) {
+                q.set(0, -deltaX, 0, 1).normalize();
+                this.camera.quaternion.multiply(q);
+            }
 
-    this.camera.rotation.y -= this.rightX / 100;
-    this.camera.rotation.x -= this.rightY / 100;
+            break;
+        case 'spherical':
+            if (Math.abs(deltaZ) > 0) {
+                this.rx -= deltaZ * 2;
+                // More convenient rotation without lock
+                // if (this.rx > 3 * Math.PI / 2) this.rx -= 2 * Math.PI;
+                // if (this.rx < -3 * Math.PI / 2) this.rx += 2 * Math.PI;
+                this.rx = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.rx));
+                this.updateQuaternionFromRotation();
+            }
+            if (Math.abs(deltaX) > 0) {
+                if (this.rx < -Math.PI / 2 || this.rx > Math.PI / 2)
+                    this.ry += deltaX * 2;
+                else
+                    this.ry -= deltaX * 2;
+                this.updateQuaternionFromRotation();
+            }
+            break;
+        default:
+            break;
+    }
 
-    // this.camera.updateMatrix();
+    // 2. Camera movement.
+    let cameraMovementSpeed = this.cameraMovementSpeed;
+    let dx = this.leftX * cameraMovementSpeed;
+    let dy = this.leftY * cameraMovementSpeed;
+    let forwardVector = this.getForwardVector(dx, -dy);
+    this.camera.position.x += forwardVector.x;
+    this.camera.position.y += forwardVector.y;
+    this.camera.position.z += forwardVector.z;
 
+    // 3. Update gamepad model.
     this.widgetControls.animate();
 };
+
+MobileWidgetCameraControls.prototype.updateQuaternionFromRotation = function()
+{
+    let q1 = new Quaternion();
+    let q2 = new Quaternion();
+    q1.setFromAxisAngle(new Vector3(1, 0, 0), this.rx);
+    q2.setFromAxisAngle(new Vector3(0, 1, 0), this.ry);
+    q2.multiply(q1);
+    this.camera.quaternion.copy(q2);
+};
+
+MobileWidgetCameraControls.prototype.getForwardVector = function(x, y)
+{
+    let nv = new Vector3(x, 0, -y);
+    nv.normalize();
+    let camQ = new Quaternion();
+    this.camera.getWorldQuaternion(camQ);
+    nv.applyQuaternion(camQ);
+    return nv;
+};
+
 
 /**
  * Mobile Widget Controller
@@ -45,6 +147,7 @@ MobileWidgetCameraControls.prototype.animate = function()
  * @param onLeftStickMove function(X, Y) from the stick center.
  * @param onRightStickMove function(X, Y) from the stick center.
  * @param onButtonPress function(whichButton) for additional buttons.
+ * @param controllerType 'playstation,' 'xbox,' 'default'
  * @constructor
  */
 let MobileWidgetControls = function(
@@ -56,6 +159,10 @@ let MobileWidgetControls = function(
 {
     if (!(element instanceof HTMLElement))
         throw Error('[MobileWidgetControls] Expected element to be an HTMLElement.');
+
+    const isTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints > 0;
+    if (!isTouch)
+        throw Error('[MobileWidgetControls] Device does not appear to support touch events.');
 
     let w = window.innerWidth;
     let h = window.innerHeight;
@@ -101,20 +208,21 @@ let MobileWidgetControls = function(
     }
 
     // Listeners.
+
+    // Here to debug with mouse events.
     // this.element.addEventListener('mousemove', e => this.updateMove(e));
     // this.element.addEventListener('mousedown', e => this.updateDown(e));
     // this.element.addEventListener('mouseup', e => this.updateUp(e));
+
+    // Rescale canvas and event/drawable coordinates with devicePixelRatio.
     window.addEventListener('resize', () => this.resize());
 
+    // Main listener.
     let touchListener = k => e =>
     {
-        // console.log(`${k}`);
-        // console.log(e);
-        // console.log(touches);
         this.fingers = [];
         if (k === 'cancel') {
             console.error('[MobileWidgetControls] Too many fingers or unsupported action.');
-            // this.init();
             return;
         }
 
@@ -137,12 +245,13 @@ let MobileWidgetControls = function(
         }
     };
 
+    // Binding to the actual events.
     window.addEventListener('touchstart', touchListener('start'));
     window.addEventListener('touchmove', touchListener('move'));
     window.addEventListener('touchend', touchListener('end'));
     window.addEventListener('touchcancel', touchListener('cancel'));
 
-    // Util.
+    // Internal.
     this._resizeRequest = null;
 
     // Model init.
@@ -886,6 +995,29 @@ MobileWidgetControls.prototype.smootherstep = function(end1, end2, t)
 {
     let x = this.clamp((t - end1) / (end2 - end1), 0.0, 1.0);
     return x * x * x * (x * (x * 6 - 15) + 10);
+};
+
+MobileWidgetControls.prototype.makeDocumentUnselectable = function()
+{
+    let styleId = 'mobile-widget-controls-style';
+    if (!document.getElementById(styleId)) {
+        let head  = document.getElementsByTagName('head')[0];
+        let style  = document.createElement('style');
+        style.id = styleId;
+        style.innerText = `
+            *.noselect {
+               -webkit-touch-callout: none; /* iOS Safari */
+                 -webkit-user-select: none; /* Safari */
+                  -khtml-user-select: none; /* Konqueror HTML */
+                    -moz-user-select: none; /* Firefox */
+                     -ms-user-select: none; /* Internet Explorer/Edge */
+                         user-select: none; /* Non-prefixed version, currently
+                                               supported by Chrome and Opera */
+            }
+        `;
+        head.appendChild(style);
+    }
+    document.body.className += ' noselect';
 };
 
 export { MobileWidgetControls, MobileWidgetCameraControls };

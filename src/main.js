@@ -36,9 +36,9 @@ function init()
 {
     const isTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints > 0;
     if (isTouch) {
-        // TODO
+        console.log('[main] Touch device detected.');
     } else {
-        // TODO
+        console.log('[main] This is not a touch device.');
     }
 
     let container = document.getElementById('container');
@@ -56,22 +56,22 @@ function init()
     light.position.set(0, 5, 0);
     scene.add(light);
 
-    let g = new TorusKnotBufferGeometry();
+    let g = new TorusKnotBufferGeometry(10, 3, 100, 16);
     let m = new MeshPhongMaterial({ color: 0x2194CE });
     cube = new Mesh(g, m);
     scene.add(cube);
 
-    //
+    // Resize renderer.
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     }, false);
 
-    // Here.
+    // HERE.
     let widget = document.getElementById('widget');
-    controls = new MobileWidgetCameraControls(widget, camera);
-    console.log('open');
+    // controls = new MobileWidgetCameraControls(widget, camera, 'quaternion', 'playstation');
+    controls = new MobileWidgetCameraControls(widget, camera, 'spherical', 'default');
 }
 
 function render()
@@ -79,23 +79,11 @@ function render()
     renderer.render(scene, camera);
 }
 
-function animate() {
+function animate()
+{
     requestAnimationFrame(animate);
 
-    // Update controls
-    // if (state.touchLeft) eventContainer.push([0.006, 0]);
-    // if (state.touchRight) eventContainer.push([-0.006, 0]);
-    // if (state.touchUp) eventContainer.push([0, 0.006]);
-    // if (state.touchDown) eventContainer.push([0, -0.006]);
-    // for (let i = 0; i < eventContainer.length; ++i) {
-    //     let e = eventContainer[i];
-    //     if (e[0]) cameraWrapper.rotateZ(e[0]);
-    //     if (e[1]) cameraWrapper.rotateX(e[1]);
-    // }
-    // eventContainer.length = 0;
-
-    // Update camera position
-    // updatePlayerPosition();
+    // Update camera rotation and position
     controls.animate();
 
     // Render
