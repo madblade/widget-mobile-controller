@@ -35,11 +35,10 @@ animate();
 function init()
 {
     const isTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints > 0;
-    if (isTouch) {
+    if (isTouch)
         console.log('[main] Touch device detected.');
-    } else {
+    else
         console.log('[main] This is not a touch device.');
-    }
 
     let container = document.getElementById('container');
     renderer = new WebGLRenderer({ antialias: true });
@@ -70,8 +69,8 @@ function init()
 
     // HERE.
     let widget = document.getElementById('widget');
-    // controls = new MobileWidgetCameraControls(widget, camera, 'quaternion', 'playstation');
-    controls = new MobileWidgetCameraControls(widget, camera, 'spherical', 'default');
+    controls = new MobileWidgetCameraControls(widget, camera, 'quaternion', 'playstation');
+    // controls = new MobileWidgetCameraControls(widget, camera, 'spherical', 'default');
 }
 
 function render()

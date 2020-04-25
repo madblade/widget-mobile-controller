@@ -113,8 +113,11 @@ MobileWidgetCameraControls.prototype.animate = function()
     let dy = this.leftY * cameraMovementSpeed;
     let forwardVector = this.getForwardVector(dx, -dy);
     this.camera.position.x += forwardVector.x;
-    this.camera.position.y += forwardVector.y;
     this.camera.position.z += forwardVector.z;
+    // Projection on the (xz) plane if not quaternion.
+    if (this.controlsType === 'quaternion') {
+        this.camera.position.y += forwardVector.y;
+    }
 
     // 3. Update gamepad model.
     this.widgetControls.animate();
