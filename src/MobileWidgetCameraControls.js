@@ -14,7 +14,7 @@ import { MobileWidgetControls } from './MobileWidgetControls';
  *      For example a
  *      <div id="widget"> just under the body tag.
  * @param camera
- *      Three.JS PerspectiveCamera or .
+ *      Three.JS PerspectiveCamera.
  * @param controlsType
  *      'quaternion' for unconstrained Quaternion.
  *      'spherical' for XZ-constrained Euler angles

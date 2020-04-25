@@ -23,7 +23,6 @@ let ASPECT = WIDTH / HEIGHT;
 let NEAR = 0.1; // precision
 let FAR = 5000;
 
-let light;
 let cube;
 let camera;
 let scene;
