@@ -2,8 +2,7 @@
 
 First-person controls for mobile devices.
 
-![Playstation](https://raw.githubusercontent.com/madblade/widget-mobile-controller/master/img/playstation.jpg)
-![XBox](https://raw.githubusercontent.com/madblade/widget-mobile-controller/master/img/xbox.jpg)
+![Default](https://raw.githubusercontent.com/madblade/widget-mobile-controller/master/img/default.jpg)
 
 
 ## Usage
