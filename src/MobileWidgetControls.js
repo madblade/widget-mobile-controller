@@ -50,12 +50,12 @@ let MobileWidgetCameraControls = function(
         this.rightY = y;
     };
 
-    let onButtonPressed = (which, isHeld) => {
-        console.log(`button ${which} ${isHeld ? 'pressed' : 'released'}.`);
+    let onButtonChange = (which, isHeld) => {
+        console.log(`Button ${which} ${isHeld ? 'pressed' : 'released'}.`);
     };
 
     this.widgetControls = new MobileWidgetControls(
-        element, onLeftStickMove, onRightStickMove, onButtonPressed,
+        element, onLeftStickMove, onRightStickMove, onButtonChange,
         controlsTheme || 'default'
     );
 
