@@ -81,7 +81,7 @@ function init()
     // HERE.
     let widget = document.getElementById('widget');
     // controls = new MobileWidgetCameraControls(widget, camera, 'quaternion', 'playstation');
-    controls = new MobileWidgetCameraControls(widget, camera, 'spherical', 'playstation');
+    controls = new MobileWidgetCameraControls(widget, camera, 'spherical', 'default');
 }
 
 function render()
