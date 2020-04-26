@@ -72,10 +72,12 @@ function animate() {
 | | 'spherical' for XZ-constrained Euler angles (best when player stays up) |
 | `controlsTheme` | Supported themes: 'playstation', 'xbox', 'default' |
 
-Note: The file can be modified to handle button events.
+The file can be modified to handle button events, and custom camera orientation.
 The list of buttons (and ids through button.id) is available through the variable controls.widgetControls.buttons.
 
 Settings `controls.cameraMovementSpeed` and `controls.cameraRotationSpeed` can be modified after the object declaration.
+
+Stick and button opacity can be increased by setting `controls.widgetControls.minOpacity` to a value `> 0.1`.
 
 #### MobileWidgetControls
 
@@ -87,8 +89,9 @@ Settings `controls.cameraMovementSpeed` and `controls.cameraRotationSpeed` can b
 | `onButtonPress` | function(whichButton, isHolding) for additional buttons behavior |
 | `controllerType` | 'playstation,' 'xbox,' 'default' |
 
-Note: The list of buttons is available through the variable controls.buttons.
+The list of buttons is available through the variable `controls.buttons`.
 
+Stick and button opacity can be increased by setting `controls.minOpacity` to a value `> 0.1`.
 
 ## Themes
 

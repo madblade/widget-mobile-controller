@@ -82,6 +82,7 @@ function init()
     let widget = document.getElementById('widget');
     // controls = new MobileWidgetCameraControls(widget, camera, 'quaternion', 'playstation');
     controls = new MobileWidgetCameraControls(widget, camera, 'spherical', 'default');
+    controls.widgetControls.minOpacity = 0.3;
 }
 
 function render()

@@ -49,7 +49,8 @@ let MobileWidgetControls = function(
     this.initialDPR = dpr;
 
     this.CANVAS_ID = 'widget-drawing-canvas';
-    this.TIME_MS_TO_GET_TO_ORIGINAL_POSITION = 60; // 400ms to relax
+    this.TIME_MS_TO_GET_TO_ORIGINAL_POSITION = 60; // 60ms to relax
+    this.minOpacity = 0.1;
 
     // Model
     this.leftStick = {};
@@ -455,7 +456,7 @@ MobileWidgetControls.prototype.drawButton = function(ctx, button)
 {
     // Background
     ctx.beginPath();
-    ctx.globalAlpha = 0.3;
+    ctx.globalAlpha = this.minOpacity + 0.2;
     let originXLeft = button.modelOriginX;
     let originYLeft = button.modelOriginY;
     ctx.arc(
@@ -492,7 +493,7 @@ MobileWidgetControls.prototype.drawButton = function(ctx, button)
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.globalAlpha = 0.4;
+    ctx.globalAlpha = this.minOpacity + 0.3;
     ctx.fillText(button.BUTTON_LABEL,
         originXLeft, originYLeft + (button.BUTTON_LABEL_OFFSET || 0)
     );
@@ -720,7 +721,7 @@ MobileWidgetControls.prototype.drawStick = function(ctx, stick)
 
     // Base
     ctx.beginPath();
-    ctx.globalAlpha = 0.1;
+    ctx.globalAlpha = this.minOpacity;
     ctx.arc(
         originXLeft, originYLeft,
         stick.STICK_BASE_DIAMETER, 0, 2 * Math.PI
@@ -750,13 +751,13 @@ MobileWidgetControls.prototype.drawStick = function(ctx, stick)
     let stickXLeft = stick.x;
     let stickYLeft = stick.y;
     ctx.beginPath();
-    ctx.globalAlpha = 0.1;
+    ctx.globalAlpha = this.minOpacity;
     ctx.arc(
         originXLeft + stickXLeft, originYLeft + stickYLeft,
         stick.STICK_HEAD_DIAMETER, 0, 2 * Math.PI
     );
     if (stick.style === 'gradient') {
-        ctx.globalAlpha = 0.15;
+        ctx.globalAlpha = this.minOpacity + 0.05;
         let gradient = ctx.createRadialGradient(
             originXLeft + stickXLeft, originYLeft + stickYLeft, 2, // inner
             originXLeft + stickXLeft, originYLeft + stickYLeft, stick.STICK_HEAD_DIAMETER // outer
@@ -784,7 +785,7 @@ MobileWidgetControls.prototype.drawStick = function(ctx, stick)
         ctx.fillStyle = 'white';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.globalAlpha = 0.1;
+        ctx.globalAlpha = this.minOpacity;
         ctx.fillText(stick.STICK_LABEL,
             originXLeft + stickXLeft,
             originYLeft + stickYLeft + (stick.STICK_LABEL_OFFSET || 0)
