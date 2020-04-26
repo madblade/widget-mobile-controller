@@ -130,10 +130,6 @@ let MobileWidgetControls = function(
     this.init();
 };
 
-MobileWidgetControls.prototype.getTimeInMilliseconds = function() {
-    return performance.now();
-};
-
 MobileWidgetControls.prototype.init = function()
 {
     let h = window.innerHeight;
@@ -855,6 +851,10 @@ MobileWidgetControls.prototype.resize = function()
 };
 
 /* UTIL */
+
+MobileWidgetControls.prototype.getTimeInMilliseconds = function() {
+    return performance.now();
+};
 
 MobileWidgetControls.prototype.distanceToObjectCenter = function(cx, cy, object)
 {
