@@ -3,9 +3,9 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 // scene size
 import {
-    Color,
+    Color, GridHelper,
     Mesh, MeshPhongMaterial,
-    PerspectiveCamera, PointLight,
+    PerspectiveCamera, PlaneHelper, PointLight,
     Scene, TorusKnotBufferGeometry,
     WebGLRenderer
 } from 'three';
@@ -47,7 +47,7 @@ function init()
     document.body.appendChild(renderer.domElement);
 
     scene = new Scene();
-    scene.background = new Color(0x444444);
+    scene.background = new Color(0x111111);
 
     camera = new PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
     scene.add(camera);
@@ -68,6 +68,10 @@ function init()
     let m = new MeshPhongMaterial({ color: 0x2194CE, shininess: 1 });
     cube = new Mesh(g, m);
     scene.add(cube);
+
+    let ph = new GridHelper(150, 20, 0x00ff00, 0xffffff);
+    ph.position.set(0, -15, 0);
+    scene.add(ph);
 
     // Resize renderer.
     let resizeCallback =  () => {

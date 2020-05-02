@@ -23,7 +23,7 @@ let MobileWidgetControls = function(
     if (!(element instanceof HTMLElement))
         throw Error('[MobileWidgetControls] Expected element to be an HTMLElement.');
 
-    // const isTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints > 0;
+    const isTouch = 'ontouchstart' in window || navigator.msMaxTouchPoints > 0;
     // if (!isTouch)
     //     throw Error('[MobileWidgetControls] Device does not appear to support touch events.');
 
@@ -73,10 +73,12 @@ let MobileWidgetControls = function(
 
     // Listeners.
 
-    // Here to debug with mouse events.
-    // this.element.addEventListener('mousemove', e => this.updateMove(e));
-    // this.element.addEventListener('mousedown', e => this.updateDown(e));
-    // this.element.addEventListener('mouseup', e => this.updateUp(e));
+    // Emulate touch with mouse on desktop.
+    if (!isTouch) {
+        this.element.addEventListener('mousemove', e => this.updateMove(e));
+        this.element.addEventListener('mousedown', e => this.updateDown(e));
+        this.element.addEventListener('mouseup', e => this.updateUp(e));
+    }
 
     // Rescale canvas and event/drawable coordinates with devicePixelRatio.
     window.addEventListener('resize', () => this.resize());
