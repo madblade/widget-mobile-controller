@@ -1,11 +1,9 @@
 
-import 'bootstrap/dist/css/bootstrap.min.css';
-
 // scene size
 import {
     Color, GridHelper,
     Mesh, MeshPhongMaterial,
-    PerspectiveCamera, PlaneHelper, PointLight,
+    PerspectiveCamera, PointLight,
     Scene, TorusKnotBufferGeometry,
     WebGLRenderer
 } from 'three';
